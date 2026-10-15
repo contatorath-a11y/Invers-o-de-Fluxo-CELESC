@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.DS_Store
+# arquivos grandes da ANEEL não vão para o repositório
+*.gdb/
+*.gdbtable
+*.gdbtablx
+UCBT_PJ*
+UCMT_PJ*
+UCAT_PJ*

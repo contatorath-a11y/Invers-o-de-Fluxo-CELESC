@@ -1,0 +1,1964 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Localizador de Alimentadores SC</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Estima o alimentador de média tensão que atende um endereço ou coordenada em Santa Catarina, a partir da BDGD publicada pela ANEEL.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/*__LEAFLET_CSS__*/
+</style>
+<style>
+/* Layout: bancada de trabalho em duas colunas — painel de controles à esquerda, mapa fixo à direita; empilha no celular */
+:root{
+  --bg:#ECEFED; --surface:#FAFBFA; --surface-2:#F1F4F2; --ink:#121A17; --ink-2:#48544F; --ink-3:#6E7975; --line:#D2D9D5;
+  --accent:#E2A400; --btn:#121A17; --btn-ink:#FAFBFA; --pt:#8C9792; --hl:#FFF4CC;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F1412; --surface:#161C19; --surface-2:#1C2420; --ink:#E8EDEA; --ink-2:#AAB5B0; --ink-3:#7D8984; --line:#2B3430;
+  --accent:#F2B705; --btn:#E8EDEA; --btn-ink:#0F1412; --pt:#66726D; --hl:#3A3214;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0F1412; --surface:#161C19; --surface-2:#1C2420; --ink:#E8EDEA; --ink-2:#AAB5B0; --ink-3:#7D8984; --line:#2B3430;
+  --accent:#F2B705; --btn:#E8EDEA; --btn-ink:#0F1412; --pt:#66726D; --hl:#3A3214;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; color-scheme:dark; }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;height:100%;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-underline-offset:2px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-2)} .small{font-size:13px} .tiny{font-size:12px}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+
+/* topo */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px 18px;flex-wrap:wrap;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{flex:none}
+.brand h1{font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand p{margin:0;font-size:13px;color:var(--ink-2)}
+.status{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:4px 12px;background:var(--surface-2);max-width:100%}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--pt);flex:none}
+.status.on i{background:var(--good)} .status.demo{background:var(--hl);color:var(--ink)} .status.demo i{background:var(--warn)}
+
+/* bancada */
+.work{flex:1;min-height:0;display:grid;grid-template-columns:minmax(340px,540px) minmax(0,1fr);gap:16px;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.panel{min-height:0;min-width:0;overflow:auto;display:flex;flex-direction:column;gap:14px;padding-right:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.card h2{font-size:18px;font-weight:700}
+.mapwrap{position:relative;min-height:0;min-width:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface-2)}
+#map{position:absolute;inset:0;background:var(--surface-2)}
+.map-empty{position:absolute;left:12px;bottom:12px;z-index:500;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--ink-2);max-width:calc(100% - 24px)}
+.legend{position:absolute;right:10px;top:10px;z-index:500;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;display:flex;flex-direction:column;gap:4px;max-width:min(260px,calc(100% - 70px));max-height:calc(100% - 20px);overflow:auto}
+.legend .lg{display:flex;align-items:center;gap:7px;min-width:0}
+.legend .lg span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none;background:var(--c,var(--pt))}
+.sw.sq{border-radius:2px}
+@media (max-width:900px){
+  body{height:auto;min-height:100%}
+  .work{grid-template-columns:minmax(0,1fr)}
+  .panel{overflow:visible}
+  .mapwrap{height:62vh;min-height:360px}
+}
+
+/* entrada de dados */
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px;background:var(--surface-2);transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--accent);background:var(--hl)}
+.drop strong{font-family:var(--f-display);font-size:17px}
+.linkbtn{background:none;border:0;padding:0;text-decoration:underline;cursor:pointer;font-weight:600}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:8px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:start;font-size:14px}
+.steps li::before{counter-increment:st;content:counter(st);font-family:var(--f-mono);font-size:12px;width:22px;height:22px;border:1.5px solid var(--ink);border-radius:50%;display:grid;place-items:center}
+.files{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.files li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:13px;border-top:1px solid var(--line);padding-top:8px}
+.files .fn{font-family:var(--f-mono);font-size:12.5px;overflow-wrap:anywhere}
+.files .fk{color:var(--ink-2);text-align:right;white-space:nowrap}
+.files .fm{grid-column:1/-1;color:var(--ink-2)}
+.files .fm.err{color:var(--crit)}
+.bar{grid-column:1/-1;height:4px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ink);transition:width .2s}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{appearance:none;border:1px solid var(--btn);background:var(--btn);color:var(--btn-ink);border-radius:7px;padding:8px 14px;font-weight:600;cursor:pointer;line-height:1.2}
+.btn:hover{filter:brightness(1.15)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink-2);filter:none}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+details{font-size:14px}
+details>summary{cursor:pointer;font-weight:600;list-style-position:outside}
+details .inner{display:flex;flex-direction:column;gap:8px;padding-top:8px;color:var(--ink-2)}
+details ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+pre.code{margin:0;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px;font:12px/1.5 var(--f-mono);overflow-x:auto;color:var(--ink)}
+.distbox{display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.distbox label{display:flex;gap:8px;align-items:center}
+
+/* abas */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;margin:-4px -4px 0;padding:0 4px}
+.tabs button{appearance:none;background:none;border:0;border-bottom:2.5px solid transparent;padding:8px 10px;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabpanel{display:flex;flex-direction:column;gap:12px;min-width:0}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--ink-2);min-width:0}
+input[type=text],input[type=search],select,textarea{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:8px 10px;font-size:15px;font-weight:400;color:var(--ink);min-width:0}
+textarea{font-family:var(--f-mono);font-size:13px;resize:vertical;min-height:130px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:460px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.inline{display:flex;gap:8px;min-width:0}
+.inline input{flex:1}
+.hint{margin:0;font-size:13px;color:var(--ink-2)}
+.note{border-left:3px solid var(--line);padding:6px 10px;font-size:13.5px;color:var(--ink-2);background:var(--surface-2);border-radius:0 6px 6px 0}
+.note.warn{border-left-color:var(--warn)} .note.err{border-left-color:var(--crit)}
+.nodata{font-size:14px;color:var(--ink-2)}
+
+/* resultado */
+.res{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line);padding-top:14px}
+.res-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--pt)}
+.pill.good i{background:var(--good)} .pill.warn i{background:var(--warn)} .pill.crit i{background:var(--crit)} .pill.serious i{background:var(--serious)} .pill.info i{background:var(--ink-3)}
+.pill.serious{background:color-mix(in srgb,var(--serious) 14%,var(--surface))}
+.pill.big{font-size:15px;padding:5px 14px 5px 11px;gap:9px}
+.pill.big i{width:11px;height:11px}
+.stag{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-2);white-space:nowrap;font-family:var(--f-body)}
+.stag i{width:8px;height:8px;border-radius:50%;background:var(--ink-3);flex:none}
+.stag.good i{background:var(--good)} .stag.warn i{background:var(--warn)} .stag.serious i{background:var(--serious)} .stag.crit i{background:var(--crit)}
+.inv{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:var(--surface-2)}
+.inv-h{display:flex;justify-content:space-between;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+.inv-st{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap}
+.inv-idx{display:flex;align-items:baseline;gap:2px 8px;flex-wrap:wrap}
+.inv-idx .mono{font-size:22px;font-weight:500}
+.meter{position:relative;padding-top:4px;margin:0 6px}
+.mt-track{position:relative;height:10px;border-radius:5px;overflow:hidden;background:var(--surface)}
+.mt-track .zone{position:absolute;top:0;bottom:0}
+.zone.good{background:color-mix(in srgb,var(--good) 28%,transparent)} .zone.warn{background:color-mix(in srgb,var(--warn) 40%,transparent)}
+.zone.serious{background:color-mix(in srgb,var(--serious) 45%,transparent)} .zone.crit{background:color-mix(in srgb,var(--crit) 40%,transparent)}
+.mt-mark{position:absolute;top:0;width:4px;height:18px;margin-left:-2px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--surface-2)}
+.mt-more{position:absolute;right:-8px;top:-2px;font-weight:700;color:var(--ink)}
+.mt-ticks{position:relative;height:16px;margin-top:3px;font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.mt-ticks span{position:absolute;transform:translateX(-50%)} .mt-ticks span:first-child{transform:none}
+.inv-kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;margin:0;font-size:13.5px}
+.inv-kv dt{color:var(--ink-2)} .inv-kv dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.inv-se{display:flex;gap:8px 10px;align-items:flex-start;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:10px}
+@media (max-width:460px){.inv-kv{grid-template-columns:minmax(0,1fr)} .inv-kv dd{margin-bottom:4px}}
+.pill.good{background:color-mix(in srgb,var(--good) 12%,var(--surface))}
+.pill.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
+.pill.crit{background:color-mix(in srgb,var(--crit) 12%,var(--surface))}
+.feeder-big{display:flex;align-items:center;gap:12px;font-family:var(--f-mono);font-weight:500;font-size:clamp(26px,5vw,36px);line-height:1.1;overflow-wrap:anywhere}
+.feeder-big .sw{width:14px;height:14px}
+.sub-line{font-size:14px;color:var(--ink-2);margin-top:-6px}
+.why{margin:0;font-size:14.5px;max-width:62ch}
+.chain{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:relative;padding-top:2px}
+.chain::before{content:"";position:absolute;top:15px;left:12.5%;right:12.5%;height:2px;background:var(--ink)}
+.node{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;min-width:0;padding:0 2px}
+.node .ic{display:flex;justify-content:center;align-items:center;width:40px;height:28px;background:var(--surface);flex:none}
+@media (max-width:520px){
+  .chain{grid-template-columns:minmax(0,1fr);gap:8px}
+  .chain::before{top:14px;bottom:14px;left:19px;right:auto;width:2px;height:auto}
+  .node{flex-direction:row;align-items:center;text-align:left;gap:10px}
+  .node b{flex:none;width:84px}
+  .node span{font-size:13.5px}
+  .node span br{display:none}
+}
+.node b{font-family:var(--f-display);font-size:13px;letter-spacing:.02em;color:var(--ink-2);font-weight:600}
+.node span{font-size:12.5px;overflow-wrap:break-word;line-height:1.25;min-width:0}
+.ranks{display:flex;flex-direction:column;gap:9px}
+.rk{display:grid;grid-template-columns:12px minmax(0,1fr) minmax(60px,34%) 40px;gap:2px 8px;align-items:center}
+.rk .nm{font-family:var(--f-mono);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk .tr{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+.rk .tr i{display:block;height:100%;border-radius:4px}
+.rk .pc{font-family:var(--f-mono);font-size:13px;text-align:right}
+.rk .mt{grid-column:2/-1;font-size:12.5px;color:var(--ink-2)}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);background:var(--surface-2);white-space:nowrap;position:sticky;top:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+tbody tr.sel{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+tbody tr.clk{cursor:pointer}
+tbody tr.clk:hover{background:var(--surface-2)}
+.confirm{display:flex;flex-direction:column;gap:8px;font-size:13.5px;color:var(--ink-2);border-top:1px dashed var(--line);padding-top:10px}
+.cands{display:flex;flex-direction:column;gap:6px}
+.cand{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;font-size:13.5px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.cand.on{border-color:var(--ink)}
+.cand span{min-width:0;overflow-wrap:anywhere}
+.grp{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.grp-h{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.grp-h b{font-family:var(--f-mono);font-weight:500;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;border:1px solid var(--line);border-radius:999px;padding:2px 10px 2px 7px;background:var(--surface-2)}
+.chip .mono{font-size:12.5px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.kpi b{display:block;font-family:var(--f-mono);font-size:18px;font-weight:500}
+.kpi span{font-size:12px;color:var(--ink-2)}
+@media (max-width:460px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.progress{font-size:13px;color:var(--ink-2)}
+.copybox{display:flex;flex-direction:column;gap:6px}
+.copybox textarea{min-height:150px;font-family:var(--f-body);font-size:13.5px}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--btn);color:var(--btn-ink);padding:8px 14px;border-radius:8px;font-size:14px;z-index:2000;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px)}
+.toast.on{opacity:1}
+.demo-banner{background:var(--hl);border:1px solid color-mix(in srgb,var(--warn) 60%,var(--line));border-radius:8px;padding:8px 12px;font-size:13.5px}
+
+/* mapa */
+.qmark{width:22px;height:22px}
+.qmark span{display:block;width:22px;height:22px;border-radius:50%;background:var(--ink);border:4px solid var(--accent);box-shadow:0 0 0 2px var(--surface)}
+.leaflet-container{font-family:var(--f-body);background:var(--surface-2)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.4;min-width:200px}
+.leaflet-popup-content b.mono{font-size:15px}
+.leaflet-bar a{background:var(--surface);color:var(--ink);border-bottom-color:var(--line)}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--ink-2)}
+.leaflet-control-attribution a{color:var(--ink-2)}
+.pop dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:6px 0}
+.pop dt{color:var(--ink-2)} .pop dd{margin:0;overflow-wrap:anywhere}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="40" height="28" viewBox="0 0 40 28" aria-hidden="true"><circle cx="14" cy="14" r="10" fill="none" stroke="var(--ink)" stroke-width="2.5"/><circle cx="26" cy="14" r="10" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg>
+    <div><h1>Localizador de Alimentadores SC</h1><p>Endereço, coordenada ou nº da UC → alimentador e subestação, pela base pública BDGD/ANEEL</p></div>
+  </div>
+  <div class="status" id="status" role="status"><i></i><span id="statusTxt">Nenhuma base carregada</span></div>
+</header>
+
+<main class="work">
+  <div class="panel">
+    <!-- DADOS -->
+    <section class="card" id="dataCard" aria-labelledby="dataTitle">
+      <div class="row" style="justify-content:space-between">
+        <h2 id="dataTitle">Base de dados</h2>
+        <button class="btn ghost sm" id="toggleData" type="button" aria-controls="dataBody" aria-expanded="true" hidden>Recolher</button>
+      </div>
+      <div id="dataBody" class="tabpanel">
+        <ol class="steps" id="steps">
+          <li><span>Baixe as planilhas de empresas da ANEEL: <a href="https://dadosabertos.aneel.gov.br/dataset/4459e483-451f-4444-8022-bd8b5eac05c5/resource/f6671cba-f269-42ef-8eb3-62cb3bfa0b98/download/ucmt_pj.csv" target="_blank" rel="noopener">UCMT_PJ.csv</a> (153 MB) e <a href="https://dadosabertos.aneel.gov.br/dataset/4459e483-451f-4444-8022-bd8b5eac05c5/resource/3ae4d382-7072-4b08-90a4-dcd187a2eae2/download/ucbt_pj.zip" target="_blank" rel="noopener">UCBT_PJ.zip</a> (1,1 GB). Não precisa descompactar.</span></li>
+          <li><span>Para consultar pelo nº da UC e cobrir áreas residenciais: baixe a BDGD da Celesc no <a href="https://dadosabertos-aneel.opendata.arcgis.com/search?tags=distribuicao" target="_blank" rel="noopener">repositório da ANEEL</a> (procure CELESC), descompacte e use a pasta .gdb inteira.</span></li>
+          <li><span>Arraste tudo para a caixa abaixo. A leitura acontece no seu navegador; nenhum arquivo sai do computador.</span></li>
+        </ol>
+        <div class="drop" id="drop">
+          <strong>Arraste os arquivos aqui</strong>
+          <span class="small">ou escolha <button class="linkbtn" type="button" id="pickBtn">arquivos</button> ou <button class="linkbtn" type="button" id="pickDir">a pasta .gdb</button>. Aceita .csv, .zip, .geojson e as tabelas .gdbtable da BDGD.</span>
+          <input type="file" id="fileIn" multiple accept=".csv,.txt,.zip,.json,.geojson,.gdbtable,.xlsx" hidden>
+          <input type="file" id="dirIn" webkitdirectory multiple hidden>
+        </div>
+        <div class="note" id="restoreBox" hidden></div>
+        <ul class="files" id="fileList"></ul>
+        <div class="distbox" id="distBox" hidden></div>
+        <div class="row" id="dataActions" hidden>
+          <button class="btn ghost sm" type="button" id="exportBase">Baixar base compacta de SC</button>
+          <button class="btn ghost sm" type="button" id="clearBase">Limpar dados</button>
+        </div>
+        <div class="row" id="demoRow">
+          <button class="btn ghost sm" type="button" id="demoBtn">Experimentar com dados fictícios</button>
+          <span class="tiny muted">Mostra como a ferramenta funciona, sem usar dados reais.</span>
+        </div>
+        <details id="howto">
+          <summary>Como obter os arquivos</summary>
+          <div class="inner">
+            <p style="margin:0"><b>Planilhas de empresas (o caminho mais rápido).</b> A ANEEL publica todas as unidades consumidoras de pessoas jurídicas com alimentador (campo CTMT), subestação, rua, bairro, CEP e coordenadas, na <a href="https://dadosabertos.aneel.gov.br/dataset/base-de-dados-geografica-da-distribuidora-bdgd" target="_blank" rel="noopener">página da BDGD no portal de dados abertos</a>. Os arquivos cobrem o Brasil inteiro; esta página guarda só Santa Catarina.</p>
+            <p style="margin:0"><b>BDGD completa da Celesc (recomendado).</b> Baixe no <a href="https://dadosabertos-aneel.opendata.arcgis.com/search?tags=distribuicao" target="_blank" rel="noopener">repositório da ANEEL</a> (procure por CELESC e escolha o ano mais recente) e descompacte. Arraste a pasta .gdb inteira para cá: a página reconhece sozinha as tabelas úteis (medidores EQME, unidades consumidoras UCBT_tab e UCMT_tab, alimentadores CTMT, subestações SUB e transformadores UNTRMT) e ignora as demais. As tabelas de rede em linha (SSDBT, SSDMT, RAMLIG) são puladas por serem muito grandes.</p>
+            <p style="margin:0">Se o navegador não conseguir ler alguma tabela, exporte pelo QGIS (gratuito):</p>
+            <ol>
+              <li>Camada ▸ Adicionar camada ▸ Adicionar camada vetorial. Tipo de fonte: <i>Diretório</i>; tipo: <i>OpenFileGDB</i>; escolha a pasta .gdb e marque UNTRMT, CTMT e SUB.</li>
+              <li>Clique com o botão direito em UNTRMT ▸ Exportar ▸ Salvar feições como. Formato <i>CSV</i>, SRC <i>EPSG:4674</i> (SIRGAS 2000) e, em opções de camada, <i>GEOMETRY = AS_XY</i>. Salve com “UNTRMT” no nome.</li>
+              <li>Repita para CTMT e SUB (são tabelas, sem geometria). Mantenha “CTMT” e “SUB” nos nomes dos arquivos.</li>
+            </ol>
+            <details>
+              <summary>Prefere Python?</summary>
+              <pre class="code" id="pyCode"># pip install geopandas pyogrio
+import geopandas as gpd
+gdb = r"C:\caminho\CELESC.gdb"          # pasta .gdb baixada da ANEEL
+tr = gpd.read_file(gdb, layer="UNTRMT").to_crs(4674)
+tr["X"], tr["Y"] = tr.geometry.x, tr.geometry.y
+cols = [c for c in ["COD_ID", "CTMT", "SUB", "MUN", "DIST", "X", "Y"] if c in tr.columns]
+tr[cols].to_csv("UNTRMT_celesc.csv", sep=";", index=False)
+for lyr in ["CTMT", "SUB"]:
+    t = gpd.read_file(gdb, layer=lyr, ignore_geometry=True)
+    t[[c for c in ["COD_ID", "NOME", "SUB"] if c in t.columns]].to_csv(f"{lyr}_celesc.csv", sep=";", index=False)</pre>
+              <button class="btn ghost sm" type="button" data-copy="#pyCode" style="align-self:flex-start">Copiar código</button>
+            </details>
+            <p style="margin:0" class="small">Em bases antigas a camada de transformadores pode se chamar UNTRD. A rede de média tensão (SSDMT) também pode ser carregada se exportada em GeoJSON.</p>
+          </div>
+        </details>
+      </div>
+      <details id="invCfg" hidden>
+        <summary>Inversão de fluxo: planilha e premissas</summary>
+        <div class="inner">
+          <p style="margin:0" class="small" id="invSrc"></p>
+          <div class="grid2">
+            <label class="f" for="pInj">Injeção da GD ao meio-dia (fração da potência)<input type="text" inputmode="decimal" id="pInj"></label>
+            <label class="f" for="pT1">Inversão provável a partir do índice<input type="text" inputmode="decimal" id="pT1"></label>
+            <label class="f" for="pT2">No limite a partir do índice<input type="text" inputmode="decimal" id="pT2"></label>
+            <label class="f" for="pT3">Atenção a partir do índice<input type="text" inputmode="decimal" id="pT3"></label>
+          </div>
+          <div class="row"><button class="btn ghost sm" type="button" id="pReset">Voltar às premissas da planilha</button></div>
+          <p style="margin:0" class="small">Para usar uma versão mais nova da planilha, arraste o arquivo .xlsx para a caixa de arquivos.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- CONSULTA -->
+    <section class="card" aria-label="Consulta">
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" type="button" aria-selected="true" aria-controls="tp-point" id="t-point" data-tab="point">Ponto</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="tp-street" id="t-street" data-tab="street">Rua ou CEP</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="tp-mun" id="t-mun" data-tab="mun">Município</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="tp-batch" id="t-batch" data-tab="batch">Lote</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="tp-uc" id="t-uc" data-tab="uc">Nº da UC</button>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="tp-point" aria-labelledby="t-point">
+        <form id="fPoint" class="tabpanel" autocomplete="off">
+          <label class="f" for="qPoint">Endereço, coordenadas ou link do Google Maps</label>
+          <div class="inline">
+            <input type="search" id="qPoint" placeholder="R. XV de Novembro, 759, Blumenau  ·  -26.9194, -49.0661">
+            <button class="btn" type="submit">Localizar</button>
+          </div>
+          <p class="hint">Também dá para clicar no mapa. Arraste o marcador para corrigir a posição; o resultado se atualiza na hora.</p>
+        </form>
+        <div id="geoBox" class="cands"></div>
+        <div id="pointResult"></div>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="tp-street" aria-labelledby="t-street" hidden>
+        <form id="fStreet" class="tabpanel" autocomplete="off">
+          <label class="f" for="sMun">Município
+            <select id="sMun"><option value="">Todos os municípios</option></select>
+          </label>
+          <label class="f" for="sStreet">Logradouro
+            <input type="search" id="sStreet" placeholder="Ex.: Presidente Getúlio Vargas">
+          </label>
+          <div class="grid2">
+            <label class="f" for="sBrr">Bairro <input type="search" id="sBrr" placeholder="Ex.: Centro"></label>
+            <label class="f" for="sCep">CEP <input type="search" id="sCep" inputmode="numeric" placeholder="89010-140 ou 89010"></label>
+          </div>
+          <div class="row"><button class="btn" type="submit">Buscar na base</button><span class="hint">Usa só os dados carregados; funciona sem internet.</span></div>
+        </form>
+        <div id="streetResult" class="tabpanel"></div>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="tp-mun" aria-labelledby="t-mun" hidden>
+        <label class="f" for="mSel">Município
+          <select id="mSel"><option value="">Escolha um município</option></select>
+        </label>
+        <div id="munResult" class="tabpanel"></div>
+        <div class="row" id="munExports" hidden>
+          <button class="btn sm" type="button" id="xMunStreets">Planilha de ruas do município</button>
+          <button class="btn ghost sm" type="button" id="xMunSummary">Resumo de alimentadores</button>
+          <button class="btn ghost sm" type="button" id="xAllStreets">Planilha de SC inteira</button>
+        </div>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="tp-batch" aria-labelledby="t-batch" hidden>
+        <label class="f" for="bIn">Uma consulta por linha: coordenadas, link do Google Maps ou endereço</label>
+        <textarea id="bIn" spellcheck="false" placeholder="-26.9194, -49.0661&#10;Rua XV de Novembro, 759, Blumenau&#10;https://maps.google.com/?q=-27.5954,-48.5480"></textarea>
+        <label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="bOnline" checked> Localizar endereços pela internet (OpenStreetMap, 1 por segundo)</label>
+        <div class="row">
+          <button class="btn" type="button" id="bRun">Processar lista</button>
+          <button class="btn ghost" type="button" id="bStop" hidden>Parar</button>
+          <button class="btn ghost" type="button" id="bExport" hidden>Baixar resultado (.csv)</button>
+          <span class="progress" id="bProg"></span>
+        </div>
+        <div id="bResult"></div>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="tp-uc" aria-labelledby="t-uc" hidden>
+        <form id="fUC" class="tabpanel" autocomplete="off">
+          <label class="f" for="ucQ">Nº da unidade consumidora ou do medidor (estão na fatura)</label>
+          <div class="inline">
+            <input type="search" id="ucQ" placeholder="0023925192  ·  MD 1504093  ·  RG 4085764">
+            <button class="btn" type="submit">Consultar</button>
+          </div>
+        </form>
+        <div id="ucNeed" class="note">Para consultar pelo número, carregue a pasta .gdb da BDGD da Celesc (basta arrastar a pasta inteira). A página usa a tabela de medidores (EQME), que liga cada UC ao seu ponto de conexão, e a de unidades consumidoras (UCBT_tab), que liga esse ponto ao alimentador.</div>
+        <div id="ucResult" class="tabpanel"></div>
+        <details id="ucBatch">
+          <summary>Várias UCs ou medidores de uma vez</summary>
+          <div class="inner">
+            <textarea id="ucBIn" spellcheck="false" placeholder="0023925192&#10;MD 1504093&#10;44484960"></textarea>
+            <div class="row"><button class="btn sm" type="button" id="ucBRun">Consultar lista</button><button class="btn ghost sm" type="button" id="ucBExport" hidden>Baixar resultado (.csv)</button><span class="progress" id="ucBProg"></span></div>
+            <div id="ucBResult"></div>
+          </div>
+        </details>
+        <details>
+          <summary>Pedir confirmação à Celesc</summary>
+          <div class="inner">
+            <p style="margin:0">A Celesc localiza o transformador e o alimentador de cada UC no cadastro atual, que pode ter mudado depois da data-base da BDGD.</p>
+            <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px">
+              <li>Atendimento Celesc: <span class="mono" id="tel">0800 048 0120</span> <button class="btn ghost sm" type="button" data-copy="#tel">Copiar</button></li>
+              <li>Projetos de geração distribuída: a Consulta de Acesso gera a Informação de Acesso, que indica o ponto de conexão.</li>
+              <li>Muitas UCs de uma vez: pedido pela Lei de Acesso à Informação (a Celesc é sociedade de economia mista).</li>
+            </ul>
+            <div class="grid2">
+              <label class="f" for="ucNum">Nº da unidade consumidora <input type="text" id="ucNum" placeholder="Ex.: 0023925192"></label>
+              <label class="f" for="ucAddr">Endereço (opcional) <input type="text" id="ucAddr" placeholder="Rua, número, bairro, município"></label>
+            </div>
+            <div class="copybox">
+              <label class="f" for="ucMsg">Texto do pedido</label>
+              <textarea id="ucMsg" spellcheck="false"></textarea>
+              <button class="btn sm" type="button" data-copy="#ucMsg" style="align-self:flex-start">Copiar texto</button>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+    <p class="tiny muted" style="margin:0 2px">Estimativa a partir da Base de Dados Geográfica da Distribuidora (BDGD), publicada anualmente pela ANEEL. A rede muda: alimentadores novos e manobras podem alterar o atendimento depois da data-base. Busca de endereços por © colaboradores do OpenStreetMap.</p>
+  </div>
+
+  <div class="mapwrap">
+    <div id="map" role="region" aria-label="Mapa"></div>
+    <div class="legend" id="legend" hidden></div>
+    <div class="map-empty" id="mapEmpty">Os pontos da base aparecem aqui depois do carregamento.</div>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+<script>
+'use strict';
+/* ================= utilidades ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const NF = new Intl.NumberFormat('pt-BR');
+const fmtN = n => NF.format(n);
+const fmtM = d => d < 1000 ? `${Math.round(d)}\u00a0m` : `${(d / 1000).toFixed(1).replace('.', ',')}\u00a0km`;
+const pct = x => `${Math.round(x * 100)}%`;
+const fmtCep = c => c && c.length === 8 ? `${c.slice(0, 5)}-${c.slice(5)}` : (c || '');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let lastYield = 0;
+async function maybeYield() { const t = performance.now(); if (t - lastYield > 120) { lastYield = t; await sleep(0); } }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 2200); }
+async function copyText(text, srcEl) {
+  try { await navigator.clipboard.writeText(text); toast('Copiado'); }
+  catch (e) {
+    if (srcEl && srcEl.select) { srcEl.focus(); srcEl.select(); toast('Selecionado: use Ctrl+C'); }
+    else { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('Copiado'); } catch (_) { toast('Não foi possível copiar'); } ta.remove(); }
+  }
+}
+function download(name, text) {
+  const blob = new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+const csvCell = v => { v = v == null ? '' : String(v); return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+const toCSV = rows => rows.map(r => r.map(csvCell).join(';')).join('\r\n');
+const slug = s => norm(s).toLowerCase().replace(/\s+/g, '-');
+
+/* ============ texto: normalização para buscas ============ */
+function norm(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim(); }
+const TYPE_WORDS = new Set(['R', 'RUA', 'AV', 'AVE', 'AVENIDA', 'TV', 'TRAV', 'TRAVESSA', 'ROD', 'RODOVIA', 'EST', 'ESTR', 'ESTRADA', 'AL', 'ALAMEDA', 'SERV', 'SERVIDAO', 'PC', 'PCA', 'PRACA', 'LGO', 'LARGO', 'BC', 'BECO', 'VD', 'VIADUTO', 'CAM', 'CAMINHO', 'LAD', 'LADEIRA', 'ACS', 'ACESSO', 'LOT', 'LOTEAMENTO', 'CONJ', 'COND', 'CONDOMINIO', 'PQ', 'PRQ', 'PARQUE', 'VL', 'VIELA']);
+const STOP = new Set(['DE', 'DA', 'DO', 'DAS', 'DOS', 'E', 'D']);
+const ABBR = { PRESIDENTE: 'PRES', DOUTOR: 'DR', DOUTORA: 'DRA', PROFESSOR: 'PROF', PROFESSORA: 'PROFA', CORONEL: 'CEL', GOVERNADOR: 'GOV', SANTO: 'STO', SANTA: 'STA', SAO: 'S', SENADOR: 'SEN', DEPUTADO: 'DEP', GENERAL: 'GAL', MARECHAL: 'MAL', PADRE: 'PE', CAPITAO: 'CAP', TENENTE: 'TEN', SARGENTO: 'SGT', ENGENHEIRO: 'ENG', VEREADOR: 'VER', PREFEITO: 'PREF', ALMIRANTE: 'ALM', MAJOR: 'MAJ', MONSENHOR: 'MONS', NOSSA: 'NS', SENHORA: 'SRA', BRIGADEIRO: 'BRIG', COMENDADOR: 'COM', DESEMBARGADOR: 'DES', JORNALISTA: 'JORN', MINISTRO: 'MIN', INTENDENTE: 'INT' };
+function tokensOf(s, stripType = true) {
+  let t = norm(s).split(' ').filter(Boolean);
+  if (stripType) while (t.length > 1 && TYPE_WORDS.has(t[0])) t.shift();
+  return t.filter(w => !STOP.has(w)).map(w => ABBR[w] || w);
+}
+function tokensMatch(q, d) {
+  return q.every(a => d.some(b => b === a || (a.length >= 3 && b.startsWith(a)) || (b.length >= 3 && a.startsWith(b))));
+}
+
+/* ================= municípios ================= */
+const MUN_DATA = /*__MUN__*/[];
+const MUN = new Map(), MUN_BY_NAME = new Map(), MUN6 = new Map();
+for (const [code, name, lat, lon] of MUN_DATA) {
+  const c = String(code), o = { code: c, name, lat, lon, nameN: norm(name.replace(' (PR)', '')) };
+  MUN.set(c, o); MUN_BY_NAME.set(o.nameN, c); MUN6.set(c.slice(0, 6), c);
+}
+function normMun(raw) {
+  if (!raw) return '';
+  let s = String(raw).trim().replace(/^"|"$/g, '');
+  if (!s) return '';
+  if (/^\d+(\.0+)?$/.test(s)) { s = s.replace(/\.0+$/, ''); return s.length === 6 ? (MUN6.get(s) || s) : s; }
+  return MUN_BY_NAME.get(norm(s)) || '';
+}
+const inScope = m => m.startsWith('42') || m.startsWith('412230');
+const inSCBox = (x, y) => x > -54.0 && x < -48.2 && y > -29.6 && y < -25.85;
+
+/* ================= estado ================= */
+const FIELDS = ['dist', 'ctmt', 'sub', 'mun', 'lgrd', 'brr', 'cep', 'tr'];
+const KIND = { 1: 'Empresa · baixa tensão', 2: 'Empresa · média tensão', 3: 'Empresa · alta tensão', 4: 'Unidade consumidora', 5: 'Transformador', 6: 'Rede de média tensão' };
+const KIND_SHORT = { 1: 'UC BT', 2: 'UC MT', 3: 'UC AT', 4: 'UC', 5: 'Trafo', 6: 'Rede MT' };
+const FONTE_K = { UCBT: 1, UCMT: 2, UCAT: 3, UC: 4, UNTRMT: 5, UNTRD: 5, TRAFO: 5, SSDMT: 6, REDE: 6 };
+const K_FONTE = { 1: 'UCBT', 2: 'UCMT', 3: 'UCAT', 4: 'UC', 5: 'UNTRMT', 6: 'SSDMT' };
+class Dict {
+  constructor(arr) { this.arr = arr || ['']; this.map = new Map(); this.arr.forEach((s, i) => this.map.set(s, i)); }
+  id(s) { s = s || ''; let i = this.map.get(s); if (i === undefined) { i = this.arr.length; this.arr.push(s); this.map.set(s, i); } return i; }
+  get(i) { return this.arr[i] || ''; }
+}
+class Cols {
+  constructor(cap = 1 << 15) { this.n = 0; this.cap = cap; this.k = new Uint8Array(cap); this.x = new Float64Array(cap); this.y = new Float64Array(cap); this.c = {}; for (const f of FIELDS) this.c[f] = new Uint32Array(cap); }
+  grow() {
+    const cap = this.cap * 2, g = (A, a) => { const b = new A(cap); b.set(a); return b; };
+    this.k = g(Uint8Array, this.k); this.x = g(Float64Array, this.x); this.y = g(Float64Array, this.y);
+    for (const f of FIELDS) this.c[f] = g(Uint32Array, this.c[f]);
+    this.cap = cap;
+  }
+  push(k, x, y, dist, ctmt, sub, mun, lgrd, brr, cep, tr) {
+    if (this.n === this.cap) this.grow();
+    const i = this.n++, c = this.c;
+    this.k[i] = k; this.x[i] = x; this.y[i] = y;
+    c.dist[i] = dist; c.ctmt[i] = ctmt; c.sub[i] = sub; c.mun[i] = mun; c.lgrd[i] = lgrd; c.brr[i] = brr; c.cep[i] = cep; c.tr[i] = tr;
+    return i;
+  }
+}
+const S = {};
+function resetData() {
+  S.P = new Cols(); S.D = {}; for (const f of FIELDS) S.D[f] = new Dict();
+  S.ctmtName = new Map(); S.ctmtSub = new Map(); S.subName = new Map();
+  S.dataBase = ''; S.loaded = new Set(); S.distOff = new Set(); S.demo = false;
+  S.grid = null; S.mx = null; S.my = null; S.last = null; S.ready = false;
+  S.lgrdTok = null; S.munSlots = new Map(); S.munSel = '';
+  S.U = newU(); S.pacD = new Dict(); S.pacInfo = new Uint32Array(0); S.mTypeD = new Dict(); S.fasD = new Dict(); S.trPos = null;
+}
+function newU() { return { n: 0, cap: 0, uc: new Uint32Array(0), pac: new Uint32Array(0), mt: new Uint8Array(0), mn: new Float64Array(0), fas: new Uint8Array(0), alt: new Map(), altRev: new Map() }; }
+function growU() {
+  const U = S.U, cap = Math.max(1 << 16, U.cap * 2), g = (A, a) => { const b = new A(cap); b.set(a); return b; };
+  U.uc = g(Uint32Array, U.uc); U.pac = g(Uint32Array, U.pac); U.mt = g(Uint8Array, U.mt); U.mn = g(Float64Array, U.mn); U.fas = g(Uint8Array, U.fas); U.cap = cap;
+}
+function setPac(pac, ct, sb, mu, trI) {
+  if (!pac || !ct) return;
+  const i = S.pacD.id(pac);
+  if ((i + 1) * 4 > S.pacInfo.length) { const b = new Uint32Array(Math.max(S.pacInfo.length * 2, (i + 1) * 4, 1 << 18)); b.set(S.pacInfo); S.pacInfo = b; }
+  const A = S.pacInfo, o = i * 4; if (A[o]) return;
+  A[o] = ct; A[o + 1] = sb; A[o + 2] = mu; A[o + 3] = trI;
+}
+function parseMeter(s) {
+  s = String(s || '').toUpperCase().trim();
+  const m = s.match(/^\d+-([A-Z]{1,4})-([A-Z0-9]+)$/) || s.match(/^([A-Z]{1,4})[\s\-:.]*([A-Z0-9]+)$/);
+  if (!m) return { type: '', serial: s.replace(/[^A-Z0-9]/g, '').replace(/^0+(?=\d)/, '') };
+  return { type: m[1], serial: /^\d+$/.test(m[2]) ? m[2].replace(/^0+(?=\d)/, '') : m[2] };
+}
+function addMeter(cod, pac, descr, fas) {
+  const U = S.U; if (U.n === U.cap) growU();
+  const i = U.n++, d = descr ? String(descr).replace(/\D/g, '').replace(/^0+/, '') : '';
+  U.uc[i] = d && d.length <= 9 ? +d : 0;
+  U.pac[i] = S.pacD.id(pac || '');
+  const m = parseMeter(cod); U.mt[i] = Math.min(255, S.mTypeD.id(m.type));
+  if (/^\d+$/.test(m.serial) && m.serial.length < 16) U.mn[i] = +m.serial;
+  else { U.mn[i] = -1; if (m.serial) { U.alt.set(m.type + ':' + m.serial, i); U.altRev.set(i, m.serial); } }
+  U.fas[i] = Math.min(255, S.fasD.id(fas || ''));
+}
+resetData();
+const isOn = i => S.distOff.size === 0 || !S.distOff.has(S.P.c.dist[i]);
+function feederLabel(ci) { const code = S.D.ctmt.get(ci); const nm = S.ctmtName.get(code); return nm || code || '—'; }
+function feederCode(ci) { const code = S.D.ctmt.get(ci); const nm = S.ctmtName.get(code); return nm && nm !== code ? code : ''; }
+function subLabel(ci, si) {
+  const code = S.D.sub.get(si) || S.ctmtSub.get(S.D.ctmt.get(ci)) || '';
+  if (!code) { const r = typeof invFor === 'function' ? invFor(ci) : null; if (r && r.sub) return r.sub; }
+  return S.subName.get(code) || code || '—';
+}
+function munName(mi) { const c = S.D.mun.get(mi); return (MUN.get(c) || {}).name || c || '—'; }
+function distLabel(di) { const d = S.D.dist.get(di); return d === '5697' ? 'Celesc (5697)' : (d || '—'); }
+
+/* ================= leitura de CSV em fluxo ================= */
+function concatU8(parts, len) { const out = new Uint8Array(len); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out; }
+function detectEnc(u8) {
+  if (u8[0] === 0xEF && u8[1] === 0xBB && u8[2] === 0xBF) return 'utf-8';
+  let end = u8.length; while (end > 0 && end > u8.length - 4 && u8[end - 1] >= 0x80) end--;
+  try { new TextDecoder('utf-8', { fatal: true }).decode(u8.subarray(0, end)); return 'utf-8'; } catch (e) { return 'windows-1252'; }
+}
+function detectDelim(line) {
+  const cands = [';', ',', '\t', '|']; let best = ',', bn = 0;
+  for (const d of cands) { let n = 0, q = false; for (let i = 0; i < line.length; i++) { const ch = line[i]; if (ch === '"') q = !q; else if (!q && ch === d) n++; } if (n > bn) { bn = n; best = d; } }
+  return best;
+}
+function splitQuoted(line, d) {
+  const out = []; const L = line.length; let i = 0;
+  for (;;) {
+    if (line.charCodeAt(i) === 34) {
+      let s = ''; let st = ++i;
+      for (;;) {
+        const q = line.indexOf('"', i);
+        if (q < 0) { s += line.slice(st); i = L; break; }
+        if (line.charCodeAt(q + 1) === 34) { s += line.slice(st, q + 1); i = q + 2; st = i; continue; }
+        s += line.slice(st, q); i = q + 1; break;
+      }
+      out.push(s);
+      const j = line.indexOf(d, i);
+      if (j < 0) return out;
+      i = j + 1;
+    } else {
+      const j = line.indexOf(d, i);
+      if (j < 0) { out.push(line.slice(i)); return out; }
+      out.push(line.slice(i, j)); i = j + 1;
+    }
+    if (i >= L) { out.push(''); return out; }
+  }
+}
+function nthField(line, d, n) {
+  const L = line.length; let i = 0, f = 0;
+  while (f < n) {
+    if (line.charCodeAt(i) === 34) { i++; while (i < L) { if (line.charCodeAt(i) === 34) { if (line.charCodeAt(i + 1) === 34) { i += 2; continue; } i++; break; } i++; } }
+    const j = line.indexOf(d, i); if (j < 0) return ''; i = j + 1; f++;
+  }
+  if (line.charCodeAt(i) === 34) { const q = line.indexOf('"', i + 1); return q < 0 ? line.slice(i + 1) : line.slice(i + 1, q); }
+  const j = line.indexOf(d, i); return j < 0 ? line.slice(i) : line.slice(i, j);
+}
+class CsvPush {
+  constructor(sink) { this.sink = sink; this.pre = []; this.preLen = 0; this.dec = null; this.buf = ''; this.pend = null; this.delim = ','; this.header = null; this.stopped = false; this.lines = 0; }
+  push(u8) {
+    if (this.stopped) return;
+    if (!this.dec) { this.pre.push(u8); this.preLen += u8.length; if (this.preLen < (1 << 21)) return; this._init(); return; }
+    this._feed(this.dec.decode(u8, { stream: true }), false);
+  }
+  end() {
+    if (this.stopped) return;
+    if (!this.dec) this._init();
+    if (this.stopped) return;
+    this._feed(this.dec.decode(), true);
+    if (this.pend !== null && !this.stopped) { const p = this.pend; this.pend = null; this._line(p, true); }
+  }
+  _init() { const all = concatU8(this.pre, this.preLen); this.pre = null; this.dec = new TextDecoder(detectEnc(all)); this._feed(this.dec.decode(all, { stream: true }), false); }
+  _feed(s, final) {
+    const buf = this.buf + s; let pos = 0, nl;
+    while ((nl = buf.indexOf('\n', pos)) !== -1) {
+      let line = buf.slice(pos, nl); pos = nl + 1;
+      if (line.charCodeAt(line.length - 1) === 13) line = line.slice(0, -1);
+      this._line(line, false);
+      if (this.stopped) { this.buf = ''; return; }
+    }
+    this.buf = buf.slice(pos);
+    if (final && this.buf) { let l = this.buf; this.buf = ''; if (l.charCodeAt(l.length - 1) === 13) l = l.slice(0, -1); this._line(l, true); }
+  }
+  _line(line, final) {
+    if (this.pend !== null) { line = this.pend + '\n' + line; this.pend = null; }
+    const hasQ = line.indexOf('"') !== -1;
+    if (hasQ && !final) { let n = 0, p = -1; while ((p = line.indexOf('"', p + 1)) !== -1) n++; if (n & 1) { this.pend = line; return; } }
+    if (!this.header) {
+      line = line.replace(/^\uFEFF/, '');
+      if (!line.trim()) return;
+      this.delim = detectDelim(line);
+      this.header = splitQuoted(line, this.delim).map(h => h.trim().replace(/^"|"$/g, '').toUpperCase());
+      if (this.sink.onHeader(this.header) === false) this.stopped = true;
+      return;
+    }
+    if (!line) return;
+    this.lines++;
+    if (this.sink.pre && !this.sink.pre(line, this.delim)) return;
+    const f = hasQ ? splitQuoted(line, this.delim) : line.split(this.delim);
+    if (this.sink.onRow(f) === false) this.stopped = true;
+  }
+}
+
+/* ================= classificação e gravação dos registros ================= */
+const tr = s => (s == null ? '' : String(s).trim());
+const up = s => (s == null ? '' : String(s).trim().toUpperCase().replace(/\s+/g, ' '));
+const cepN = s => (s == null ? '' : String(s).replace(/\D/g, '')).replace(/^(\d{7})$/, '0$1');
+function toNum(s) { if (s == null) return NaN; s = String(s).trim(); if (!s) return NaN; if (s.indexOf(',') >= 0 && s.indexOf('.') < 0) s = s.replace(',', '.'); return +s; }
+
+function makeSink(fname, entry) {
+  let mode = null, I = {}, ucKind = 4;
+  const sink = {
+    pre: null,
+    onHeader(cols) {
+      const find = (...ns) => { for (const n of ns) { const i = cols.indexOf(n); if (i >= 0) return i; } return -1; };
+      const has = n => cols.includes(n);
+      I = { c: find('CTMT'), s: find('SUB'), m: find('MUN', 'COD_MUN', 'MUNICIPIO'), l: find('LGRD', 'LOGRADOURO'), b: find('BRR', 'BAIRRO'), p: find('CEP'), d: find('DIST'),
+        x: find('POINT_X', 'X', 'LONGITUDE', 'LON', 'LNG'), y: find('POINT_Y', 'Y', 'LATITUDE', 'LAT'), db: find('DATA_BASE'), f: find('FONTE'),
+        cn: find('CTMT_NOME'), sn: find('SUB_NOME'), id: find('COD_ID'), nome: find('NOME'), pac: find('PAC'), t: -1 };
+      const hasXY = I.x >= 0 && I.y >= 0; I.xy = hasXY;
+      if (I.f >= 0 && I.c >= 0) mode = 'compact';
+      else if (I.id >= 0 && I.nome >= 0 && I.c < 0 && !hasXY) mode = /CTMT/i.test(fname) ? 'ctmt' : /SUB/i.test(fname) ? 'sub' : (has('SUB') || has('PAC_INI') || has('TEN_NOM')) ? 'ctmt' : 'sub';
+      else if (I.c >= 0 && (hasXY || I.l >= 0 || I.p >= 0)) mode = (/UNTR|TRAFO|TRANSF|EQTR/i.test(fname) || (has('POT_NOM') && I.l < 0 && !has('COD_ID_ENCR'))) ? 'tr' : 'uc';
+      if (!mode) { entry.error(`Não reconheci as colunas: ${cols.slice(0, 10).join(', ')}${cols.length > 10 ? '…' : ''}`); return false; }
+      if (mode === 'uc') { ucKind = /UCBT/i.test(fname) ? 1 : /UCMT/i.test(fname) ? 2 : /UCAT/i.test(fname) ? 3 : 4; I.t = find('UNI_TR_MT', 'UNI_TR_D', 'UNI_TR'); }
+      if (mode === 'tr') I.t = I.id;
+      if (mode === 'compact') I.t = find('TR');
+      entry.kind(mode, ucKind);
+      if ((mode === 'uc' || mode === 'tr') && I.m >= 0) {
+        const im = I.m;
+        sink.pre = (line, d) => { const v = nthField(line, d, im).trim(); if (!v || !/^\d/.test(v)) return true; return v.startsWith('42') || v.startsWith('412230'); };
+      }
+      return true;
+    },
+    onRow(f) {
+      if (mode === 'ctmt') { const id = tr(f[I.id]); if (!id) return; S.ctmtName.set(id, tr(f[I.nome])); if (I.s >= 0 && tr(f[I.s])) S.ctmtSub.set(id, tr(f[I.s])); entry.kept++; return; }
+      if (mode === 'sub') { const id = tr(f[I.id]); if (!id) return; S.subName.set(id, tr(f[I.nome])); entry.kept++; return; }
+      const ctmt = tr(f[I.c]); if (!ctmt) return;
+      const mun = I.m >= 0 ? normMun(f[I.m]) : '';
+      let x = NaN, y = NaN;
+      if (I.xy) { x = toNum(f[I.x]); y = toNum(f[I.y]); if (!(x > -58 && x < -44 && y > -32 && y < -23)) { if (tr(f[I.x])) entry.badXY++; x = NaN; y = NaN; } }
+      if (mun) { if (!inScope(mun)) return; } else if (!isNaN(x)) { if (!inSCBox(x, y)) return; }
+      const k = mode === 'tr' ? 5 : mode === 'compact' ? (FONTE_K[up(f[I.f])] || 4) : ucKind;
+      const D = S.D, ci = D.ctmt.id(ctmt), si = D.sub.id(tr(f[I.s])), mi = D.mun.id(mun), ti = D.tr.id(tr(f[I.t]));
+      S.P.push(k, x, y, D.dist.id(tr(f[I.d])), ci, si, mi, D.lgrd.id(up(f[I.l])), D.brr.id(up(f[I.b])), D.cep.id(cepN(f[I.p])), ti);
+      if (I.pac >= 0 && k < 5) setPac(tr(f[I.pac]), ci, si, mi, ti);
+      if (mode === 'compact') { const cn = tr(f[I.cn]), sn = tr(f[I.sn]), sc = tr(f[I.s]); if (cn) S.ctmtName.set(ctmt, cn); if (sn && sc) S.subName.set(sc, sn); if (sc) S.ctmtSub.set(ctmt, sc); }
+      if (I.db >= 0 && !S.dataBase) { const v = tr(f[I.db]); if (v) S.dataBase = v; }
+      entry.kept++;
+    }
+  };
+  return sink;
+}
+
+/* ================= lista de arquivos na tela ================= */
+const MODE_TXT = { inv: 'Planilha de inversão de fluxo', eqme: 'Medidores (EQME)', ucs: 'Unidades consumidoras', uc: 'Unidades consumidoras', tr: 'Transformadores', ctmt: 'Nomes dos alimentadores', sub: 'Nomes das subestações', compact: 'Base compacta', geo: 'GeoJSON' };
+function fileEntry(name, size) {
+  const li = document.createElement('li');
+  li.innerHTML = `<span class="fn">${esc(name)}</span><span class="fk">${size ? (size < 1048576 ? Math.max(1, Math.round(size / 1024)) + ' KB' : (size / 1048576).toFixed(size > 1e8 ? 0 : 1).replace('.', ',') + ' MB') : ''}</span><span class="bar"><i></i></span><span class="fm">Lendo…</span>`;
+  $('#fileList').appendChild(li);
+  const fm = li.querySelector('.fm'), bar = li.querySelector('.bar i');
+  const e = {
+    kept: 0, badXY: 0, lines: 0, mode: null, failed: false,
+    kind(mode, uk) { e.mode = mode; li.querySelector('.fk').textContent = (mode === 'uc' ? ['', 'Empresas BT', 'Empresas MT', 'Empresas AT', 'Unidades consumidoras'][uk] : MODE_TXT[mode]) + ' · ' + li.querySelector('.fk').textContent; },
+    progress(p) { bar.style.width = Math.min(100, p * 100).toFixed(1) + '%'; fm.textContent = `Lendo… ${fmtN(e.lines)} linhas`; },
+    done() { bar.style.width = '100%'; bar.parentElement.hidden = true; let t;
+      if (e.mode === 'ctmt' || e.mode === 'sub') t = `${fmtN(e.kept)} nomes lidos`;
+      else if (e.mode === 'eqme') t = `${fmtN(e.kept)} medidores lidos`;
+      else if (e.mode === 'inv') t = `${fmtN(e.kept)} alimentadores com situação estimada`;
+      else if (e.mode === 'ucs') t = `${fmtN(e.kept)} unidades consumidoras com alimentador`;
+      else t = `${fmtN(e.kept)} registros de SC${e.lines ? ` (de ${fmtN(e.lines)} linhas)` : ''}`;
+      if (e.badXY) t += ` · ${fmtN(e.badXY)} sem coordenada válida`;
+      if (e.short) t += `. O cabeçalho indica ${fmtN(e.short)} linhas: parte da tabela pode ter ficado de fora. Se faltar alguma UC, exporte esta tabela pelo QGIS.`;
+      if (e.badXY && e.badXY > e.kept * 0.5) { t += '. As coordenadas parecem estar em outra projeção: exporte em EPSG:4674 ou 4326.'; fm.classList.add('err'); }
+      fm.textContent = t; },
+    error(msg) { e.failed = true; bar.parentElement.hidden = true; fm.textContent = msg; fm.classList.add('err'); }
+  };
+  return e;
+}
+
+/* ================= carregamento ================= */
+const GDB_MSG = 'Isto é parte de uma pasta .gdb. Arraste a pasta inteira (ou os arquivos .gdbtable) em vez do ZIP ou de arquivos soltos.';
+async function loadFiles(list) {
+  const all = [...list]; if (!all.length) return;
+  if (S.demo) { resetData(); $('#fileList').innerHTML = ''; }
+  $('#steps').hidden = true; $('#demoRow').hidden = true;
+  const isAux = f => GDB_AUX.test(f.name) || /^(gdb|timestamps)$/i.test(f.name) || f.size === 0;
+  const gdbs = all.filter(f => /\.gdbtable$/i.test(f.name)), others = all.filter(f => !isAux(f) && !/\.gdbtable$/i.test(f.name));
+  for (const f of others) {
+    const key = f.name + '|' + f.size;
+    if (S.loaded.has(key)) { const e = fileEntry(f.name, f.size); e.error('Este arquivo já foi carregado.'); continue; }
+    const e = fileEntry(f.name, f.size);
+    try {
+      if (/\.zip$/i.test(f.name)) await loadZip(f, e);
+      else if (/\.(geo)?json$/i.test(f.name)) await loadGeoJSON(f, e);
+      else if (/\.gdb$/i.test(f.name)) throw new Error(GDB_MSG);
+      else if (/\.xlsx?$/i.test(f.name)) await loadInvXlsx(f, e);
+      else await loadCsvFile(f, e);
+      if (!e.failed) { e.done(); S.loaded.add(key); }
+    } catch (err) { e.error(err && err.message ? err.message : String(err)); }
+  }
+  if (gdbs.length) await loadGdbSet(gdbs);
+  finalize();
+}
+async function loadCsvFile(file, e) {
+  const sink = makeSink(file.name, e), p = new CsvPush(sink);
+  const reader = file.stream().getReader(); let bytes = 0;
+  for (;;) {
+    const { done, value } = await reader.read(); if (done) break;
+    bytes += value.length; p.push(value); e.lines = p.lines;
+    if (p.stopped) { try { reader.cancel(); } catch (_) {} break; }
+    if (performance.now() - lastYield > 120) { e.progress(bytes / file.size); await maybeYield(); }
+  }
+  p.end(); e.lines = p.lines;
+}
+async function loadZip(file, e) {
+  if (!window.fflate) throw new Error('O leitor de ZIP não carregou (sem internet?). Descompacte o arquivo e carregue o .csv de dentro dele.');
+  const uz = new fflate.Unzip(); uz.register(fflate.UnzipInflate);
+  let err = null, found = 0, gdb = false; const parsers = [];
+  uz.onfile = f => {
+    if (/\.gdb[\\/]|\.gdbtable$/i.test(f.name)) { gdb = true; return; }
+    if (!/\.(csv|txt)$/i.test(f.name)) return;
+    found++;
+    const p = new CsvPush(makeSink(file.name + ' ' + f.name.split(/[\\/]/).pop(), e)); parsers.push(p);
+    f.ondata = (er, chunk, final) => {
+      if (er) { err = er; return; }
+      try { if (!p.stopped) { p.push(chunk); if (final) p.end(); } } catch (ex) { err = ex; }
+    };
+    try { f.start(); } catch (ex) { err = new Error('Este ZIP usa um tipo de compressão que o navegador não lê. Descompacte e carregue o .csv.'); }
+  };
+  const reader = file.stream().getReader(); let bytes = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) { uz.push(new Uint8Array(0), true); break; }
+    bytes += value.length; uz.push(value);
+    e.lines = parsers.reduce((a, p) => a + p.lines, 0);
+    if (err) { try { reader.cancel(); } catch (_) {} break; }
+    if (performance.now() - lastYield > 120) { e.progress(bytes / file.size); await maybeYield(); }
+  }
+  e.lines = parsers.reduce((a, p) => a + p.lines, 0);
+  if (err) throw err;
+  if (!found) throw new Error(gdb ? GDB_MSG : 'Não encontrei nenhum .csv dentro do ZIP.');
+}
+async function loadGeoJSON(file, e) {
+  if (file.size > 600e6) throw new Error('GeoJSON grande demais para o navegador. Exporte como CSV com GEOMETRY = AS_XY.');
+  let gj; try { gj = JSON.parse(await file.text()); } catch (_) { throw new Error('Arquivo JSON inválido.'); }
+  const feats = gj.features || []; if (!feats.length) throw new Error('Nenhuma feição encontrada no GeoJSON.');
+  const sink = makeSink('geo', e);
+  sink.onHeader(['FONTE', 'DIST', 'CTMT', 'SUB', 'MUN', 'LGRD', 'BRR', 'CEP', 'TR', 'POINT_X', 'POINT_Y']);
+  const isTrName = /UNTR|TRAFO|TRANSF/i.test(file.name), fonteUC = /UCBT/i.test(file.name) ? 'UCBT' : /UCMT/i.test(file.name) ? 'UCMT' : 'UC';
+  let i = 0;
+  for (const ft of feats) {
+    const pr = {}; for (const [k, v] of Object.entries(ft.properties || {})) pr[k.toUpperCase()] = v == null ? '' : String(v);
+    const g = ft.geometry; if (!g || !pr.CTMT) continue;
+    const base = [pr.DIST || '', pr.CTMT, pr.SUB || '', pr.MUN || '', pr.LGRD || '', pr.BRR || '', pr.CEP || ''];
+    if (g.type === 'Point') {
+      const fonte = isTrName || (pr.POT_NOM !== undefined && pr.LGRD === undefined) ? 'UNTRMT' : fonteUC;
+      sink.onRow([fonte, ...base, fonte === 'UNTRMT' ? (pr.COD_ID || '') : (pr.UNI_TR_MT || ''), g.coordinates[0], g.coordinates[1]]);
+    } else if (g.type === 'LineString' || g.type === 'MultiLineString') {
+      const lines = g.type === 'LineString' ? [g.coordinates] : g.coordinates; let px = 0, py = 0;
+      for (const ln of lines) for (const [x, y] of ln) { if (Math.abs(x - px) + Math.abs(y - py) < 0.0003) continue; px = x; py = y; sink.onRow(['SSDMT', ...base, '', x, y]); }
+    }
+    if (++i % 5000 === 0) { e.progress(i / feats.length); await maybeYield(); }
+  }
+  e.lines = feats.length;
+}
+
+/* ================= leitor de .gdbtable (File Geodatabase da BDGD) ================= */
+const GDB_AUX = /\.(gdbtablx|gdbindexes|atx|spx|freelist|horizon|cdf|lock)$/i;
+function gdbDate(d) { if (!isFinite(d)) return ''; const t = Date.UTC(1899, 11, 30) + Math.round(d * 86400000); const x = new Date(t); return isNaN(x) ? '' : x.toISOString().slice(0, 10); }
+function utmZone(wkt) {
+  if (!/^\s*PROJCS/i.test(wkt)) return null;
+  const m = wkt.match(/UTM[ _]zone[ _](\d{1,2})\s*([NS])?/i);
+  return m ? { zone: +m[1], south: (m[2] || 'S').toUpperCase() === 'S' } : { zone: 0 };
+}
+function utmToLonLat(E, N, zone, south) {
+  const a = 6378137, f = 1 / 298.257222101, k0 = 0.9996, e2 = f * (2 - f), ep2 = e2 / (1 - e2);
+  const x = E - 500000, y = south ? N - 10000000 : N;
+  const mu = y / k0 / (a * (1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 ** 3 / 256));
+  const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+  const p1 = mu + (3 * e1 / 2 - 27 * e1 ** 3 / 32) * Math.sin(2 * mu) + (21 * e1 ** 2 / 16 - 55 * e1 ** 4 / 32) * Math.sin(4 * mu) + (151 * e1 ** 3 / 96) * Math.sin(6 * mu) + (1097 * e1 ** 4 / 512) * Math.sin(8 * mu);
+  const sn = Math.sin(p1), cs = Math.cos(p1), tn = Math.tan(p1);
+  const N1 = a / Math.sqrt(1 - e2 * sn * sn), T1 = tn * tn, C1 = ep2 * cs * cs, R1 = a * (1 - e2) / Math.pow(1 - e2 * sn * sn, 1.5), D = x / (N1 * k0);
+  const lat = p1 - (N1 * tn / R1) * (D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * ep2) * D ** 4 / 24 + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * ep2 - 3 * C1 * C1) * D ** 6 / 720);
+  const lon = (D - (1 + 2 * T1 + C1) * D ** 3 / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * D ** 5 / 120) / cs;
+  return [zone * 6 - 183 + lon * 180 / Math.PI, lat * 180 / Math.PI];
+}
+function gdbFields(fd, dv, p, i, nf, out) {
+  const L = fd.length;
+  for (; i < nf; i++) {
+    if (p >= L) return -1;
+    const nl = fd[p++]; if (!nl || nl > 128 || p + nl * 2 > L) return -1;
+    let name = ''; for (let k = 0; k < nl; k++) { const c = dv.getUint16(p + k * 2, true); if (c < 32 || c > 0x24F) return -1; name += String.fromCharCode(c); }
+    p += nl * 2; if (p >= L) return -1;
+    const al = fd[p++]; if (p + al * 2 >= L) return -1; p += al * 2;
+    const type = fd[p++], f = { name: name.toUpperCase(), type, nullable: false };
+    if (type === 6) p += 2, f.oid = true;
+    else if (type === 4) {
+      if (p + 6 > L) return -1; p += 4; f.nullable = !!(fd[p++] & 1);
+      let v = 0, s = 1, c; do { if (p >= L) return -1; c = fd[p++]; v += (c & 0x7f) * s; s *= 128; } while (c & 0x80); p += v;
+    } else if (type <= 3 || type === 5 || (type >= 13 && type <= 16)) { if (p + 3 > L) return -1; p++; f.nullable = !!(fd[p++] & 1); const ds = fd[p++]; p += ds; }
+    else if (type === 8 || type === 10 || type === 11 || type === 12) { if (p + 2 > L) return -1; p++; f.nullable = !!(fd[p++] & 1); }
+    else if (type === 7) {
+      if (p + 4 > L) return -1; p++; f.nullable = !!(fd[p++] & 1);
+      const wl = dv.getUint16(p, true); p += 2; if (p + wl + 25 > L) return -1;
+      let wkt = ''; for (let k = 0; k + 1 < wl; k += 2) wkt += String.fromCharCode(dv.getUint16(p + k, true)); p += wl;
+      const gf = fd[p++]; f.wkt = wkt; f.hasM = !!(gf & 2); f.hasZ = !!(gf & 4);
+      f.xo = dv.getFloat64(p, true); f.yo = dv.getFloat64(p + 8, true); f.xys = dv.getFloat64(p + 16, true); p += 24;
+      out.push(f);
+      if (i === nf - 1) return L;                       // o restante é a grade do índice espacial
+      // a grade espacial tem tamanho variável: procura o ponto em que os campos seguintes voltam a fazer sentido
+      let best = null;
+      for (let q = p; q < L; q++) { const tmp = [], e = gdbFields(fd, dv, q, i + 1, nf, tmp); if (e > 0) { if (e >= L - 8) { out.push(...tmp); return e; } if (!best) best = tmp; } }
+      if (best) { out.push(...best); return L; }
+      return -1;
+    } else return -1;                                    // raster ou tipo desconhecido
+    if (p > L) return -1;
+    out.push(f);
+  }
+  return p;
+}
+class GdbTable {
+  static async open(file) {
+    if (file.size < 60) throw new Error('arquivo vazio ou incompleto');
+    const h = new DataView(await file.slice(0, 40).arrayBuffer());
+    const fdoff = h.getUint32(32, true) + h.getUint32(36, true) * 4294967296;
+    if (fdoff < 40 || fdoff > file.size - 4) throw new Error('cabeçalho não reconhecido');
+    const hsz = new DataView(await file.slice(fdoff, fdoff + 4).arrayBuffer()).getUint32(0, true);
+    if (hsz < 10 || hsz > (64 << 20) || fdoff + 4 + hsz > file.size) throw new Error('descrição de campos inválida');
+    const fd = new Uint8Array(await file.slice(fdoff, fdoff + 4 + hsz).arrayBuffer()), dv = new DataView(fd.buffer);
+    const t = new GdbTable(); t.file = file; t.nrows = h.getUint32(4, true); t.maxRow = h.getUint32(8, true); t.dataStart = fdoff + 4 + hsz;
+    t.geomType = dv.getUint32(8, true) & 0xff;
+    const fields = []; if (gdbFields(fd, dv, 14, 0, dv.getUint16(12, true), fields) < 0) throw new Error('campos em formato não suportado');
+    t.fields = fields; t.names = fields.map(f => f.name);
+    return t;
+  }
+  async scan(want, onRow, onProgress) {
+    const F = this.fields.filter(f => !f.oid); let nn = 0; for (const f of F) f.nb = f.nullable ? nn++ : -1;
+    const nbBytes = (nn + 7) >> 3, wi = new Map(want.map((n, k) => [n, k])), ix = wi.has('POINT_X') ? wi.get('POINT_X') : -1, iy = wi.has('POINT_Y') ? wi.get('POINT_Y') : -1;
+    const gf = F.find(f => f.type === 7), isPt = !!gf && this.geomType === 1, utm = gf ? utmZone(gf.wkt) : null;
+    const plan = F.map(f => ({ t: f.type, nb: f.nb, o: f.type === 7 ? (ix >= 0 ? -2 : -1) : (wi.has(f.name) ? wi.get(f.name) : -1) }));
+    const dec = new TextDecoder('utf-8'), size = this.file.size, CH = 32 << 20, out = new Array(want.length).fill('');
+    let pos = this.dataStart, buf = new Uint8Array(0), bdv = new DataView(buf.buffer), bs = pos, rows = 0, junk = 0;
+    const load = async need => { buf = new Uint8Array(await this.file.slice(pos, Math.min(size, pos + Math.max(CH, need))).arrayBuffer()); bdv = new DataView(buf.buffer); bs = pos; };
+    const vu = [0, 0];
+    while (pos + 4 <= size) {
+      let o = pos - bs;
+      if (o + 4 > buf.length) { await load(4); o = 0; }
+      const sz = bdv.getInt32(o, true);
+      if (sz < 0) { pos += 4 - sz; continue; }                                  // linha apagada
+      if (sz === 0 || sz > this.maxRow) { pos++; if (++junk > (16 << 20)) throw new Error('não consegui ler as linhas desta tabela'); continue; }
+      if (o + 4 + sz > buf.length) { if (pos + 4 + sz > size) break; await load(4 + sz); o = 0; }
+      let p = o + 4; const end = p + sz, nbs = p; p += nbBytes; let ok = p <= end;
+      for (let j = 0; ok && j < plan.length; j++) {
+        const pl = plan[j];
+        if (pl.nb >= 0 && (buf[nbs + (pl.nb >> 3)] >> (pl.nb & 7)) & 1) { if (pl.o >= 0) out[pl.o] = ''; else if (pl.o === -2) { out[ix] = ''; out[iy] = ''; } continue; }
+        const t = pl.t;
+        if (t === 4 || t === 7 || t === 8 || t === 12) {
+          let v = 0, s = 1, c; do { if (p >= end) { ok = false; break; } c = buf[p++]; v += (c & 0x7f) * s; s *= 128; } while (c & 0x80);
+          if (!ok || p + v > end) { ok = false; break; }
+          if (pl.o >= 0) {
+            if (t !== 4) out[pl.o] = '';
+            else if (v <= 40) { let str = '', k = p; const e3 = p + v; for (; k < e3; k++) { const ch = buf[k]; if (ch > 127) break; str += String.fromCharCode(ch); } out[pl.o] = k === e3 ? str : dec.decode(buf.subarray(p, p + v)); }
+            else out[pl.o] = dec.decode(buf.subarray(p, p + v));
+          }
+          else if (pl.o === -2) {
+            out[ix] = ''; out[iy] = '';
+            if (isPt && v) {
+              let q = p, k = 0; const e2 = p + v;
+              for (; k < 3 && q < e2; k++) { let w = 0, sc = 1, ch; do { ch = buf[q++]; w += (ch & 0x7f) * sc; sc *= 128; } while ((ch & 0x80) && q < e2); if (k) vu[k - 1] = w; }
+              if (k === 3 && vu[0] > 0) { let X = (vu[0] - 1) / gf.xys + gf.xo, Y = (vu[1] - 1) / gf.xys + gf.yo; if (utm && utm.zone) [X, Y] = utmToLonLat(X, Y, utm.zone, utm.south); out[ix] = X.toFixed(7); out[iy] = Y.toFixed(7); }
+            }
+          }
+          p += v;
+        } else {
+          const w = t === 0 ? 2 : (t === 1 || t === 2) ? 4 : (t === 3 || t === 5 || (t >= 13 && t <= 15)) ? 8 : t === 16 ? 10 : 16;
+          if (p + w > end) { ok = false; break; }
+          if (pl.o >= 0) out[pl.o] = t === 0 ? String(bdv.getInt16(p, true)) : t === 1 ? String(bdv.getInt32(p, true)) : t === 2 ? String(bdv.getFloat32(p, true)) : t === 3 ? String(bdv.getFloat64(p, true))
+            : (t === 5 || t === 14) ? gdbDate(bdv.getFloat64(p, true)) : t === 13 ? String(bdv.getUint32(p, true) + bdv.getInt32(p + 4, true) * 4294967296) : '';
+          p += w;
+        }
+      }
+      if (!ok) { pos++; if (++junk > (16 << 20)) throw new Error('não consegui ler as linhas desta tabela'); continue; }
+      rows++; onRow(out); pos += 4 + sz;
+      if ((rows & 32767) === 0) { onProgress((pos - this.dataStart) / Math.max(1, size - this.dataStart)); await maybeYield(); }
+    }
+    return { rows, junk };
+  }
+}
+function classifyGdb(t) {
+  const F = new Set(t.names), pt = t.geomType === 1;
+  if (F.has('COD_ID') && F.has('PAC') && F.has('DESCR') && (F.has('TIPMED') || F.has('TIP_UNID')) && !F.has('CTMT')) return 'eqme';
+  if (F.has('CTMT') && F.has('PAC') && !F.has('POT_INST') && (F.has('CLAS_SUB') || F.has('GRU_TEN') || F.has('TEN_FORN') || F.has('GRU_TAR') || F.has('CAR_INST'))) return 'ucs';
+  if (F.has('CTMT') && F.has('POT_NOM') && pt) return 'tr';
+  if (F.has('COD_ID') && F.has('NOME') && !F.has('CTMT') && (F.has('PAC_INI') || F.has('TEN_NOM') || F.has('UNI_TR_AT'))) return 'ctmt';
+  if (F.has('COD_ID') && F.has('NOME') && F.has('POS') && !F.has('CTMT') && !F.has('SUB')) return 'sub';
+  return null;
+}
+function noteEntry(text) {
+  const li = document.createElement('li'); li.innerHTML = '<span class="fm" style="grid-column:1/-1"></span>';
+  li.firstChild.textContent = text; $('#fileList').appendChild(li);
+  return { set(t, err) { li.firstChild.textContent = t; li.firstChild.classList.toggle('err', !!err); } };
+}
+async function loadGdbSet(files) {
+  const opened = [], bad = []; let skipped = 0, dup = 0;
+  const note = noteEntry(`Examinando ${fmtN(files.length)} tabela${files.length > 1 ? 's' : ''} .gdbtable…`);
+  for (const f of files) {
+    const key = f.name + '|' + f.size; if (S.loaded.has(key)) { dup++; continue; }
+    try { const t = await GdbTable.open(f); const mode = classifyGdb(t); if (mode) opened.push({ f, t, mode, key }); else skipped++; }
+    catch (e) { bad.push(`${f.name} (${e.message})`); }
+  }
+  const order = { ctmt: 0, sub: 1, eqme: 2, ucs: 3, tr: 4 };
+  opened.sort((a, b) => order[a.mode] - order[b.mode]);
+  for (const o of opened) {
+    const e = fileEntry(o.f.name, o.f.size);
+    try { await loadGdbTable(o, e); if (!e.failed) { e.done(); S.loaded.add(o.key); } } catch (err) { e.error(`Não consegui ler esta tabela: ${err.message || err}`); }
+  }
+  let txt = opened.length ? `${opened.length} tabela${opened.length > 1 ? 's' : ''} da BDGD usada${opened.length > 1 ? 's' : ''}` : 'Nenhuma das tabelas enviadas é usada por esta ferramenta';
+  if (skipped) txt += `; ${fmtN(skipped)} sem uso aqui foram ignoradas`;
+  if (dup) txt += `; ${dup} já estavam carregadas`;
+  txt += '.';
+  if (opened.some(o => o.mode === 'eqme') && !opened.some(o => o.mode === 'ucs')) txt += ' Para ligar os medidores aos alimentadores, carregue também a tabela de unidades consumidoras (UCBT_tab) da mesma pasta .gdb, ou arraste a pasta inteira.';
+  if (bad.length) txt += ` Não consegui ler: ${bad.slice(0, 5).join('; ')}${bad.length > 5 ? '…' : ''}`;
+  note.set(txt, bad.length > 0 && !opened.length);
+}
+async function loadGdbTable({ t, mode }, e) {
+  const has = n => t.names.includes(n), pick = l => l.filter(has), pt = t.geomType === 1 && t.fields.some(f => f.type === 7);
+  const prog = p => e.progress(p); let res;
+  e.total = t.nrows;
+  if (mode === 'ctmt' || mode === 'sub' || mode === 'tr') {
+    const want = mode === 'ctmt' ? pick(['COD_ID', 'NOME', 'SUB']) : mode === 'sub' ? pick(['COD_ID', 'NOME']) : [...pick(['COD_ID', 'CTMT', 'SUB', 'MUN', 'DIST', 'POT_NOM', 'PAC_2']), 'POINT_X', 'POINT_Y'];
+    const sink = makeSink(mode === 'ctmt' ? 'CTMT' : mode === 'sub' ? 'SUB' : 'UNTRMT', e); sink.onHeader(want);
+    const ip = want.indexOf('PAC_2'), ic = want.indexOf('CTMT'), isb = want.indexOf('SUB'), im = want.indexOf('MUN'), iid = want.indexOf('COD_ID');
+    res = await t.scan(want, r => { e.lines++; sink.onRow(r); if (ip >= 0 && r[ip] && r[ic]) setPac(r[ip], S.D.ctmt.id(r[ic]), S.D.sub.id(isb >= 0 ? r[isb] : ''), S.D.mun.id(im >= 0 ? normMun(r[im]) : ''), S.D.tr.id(iid >= 0 ? r[iid] : '')); }, prog);
+  } else if (mode === 'eqme') {
+    const want = pick(['COD_ID', 'PAC', 'DESCR', 'FAS_CON']), iC = want.indexOf('COD_ID'), iP = want.indexOf('PAC'), iD = want.indexOf('DESCR'), iF = want.indexOf('FAS_CON');
+    e.kind('eqme');
+    res = await t.scan(want, r => { e.lines++; addMeter(r[iC], r[iP], r[iD], iF >= 0 ? r[iF] : ''); e.kept++; }, prog);
+  } else if (mode === 'ucs') {
+    const want = pick(['PAC', 'CTMT', 'SUB', 'MUN', 'UNI_TR_MT', 'DIST', 'LGRD', 'BRR', 'CEP', 'DATA_BASE']); if (pt) want.push('POINT_X', 'POINT_Y');
+    const ix = n => want.indexOf(n), iP = ix('PAC'), iC = ix('CTMT'), iS = ix('SUB'), iM = ix('MUN'), iT = ix('UNI_TR_MT'), iD = ix('DIST'), iL = ix('LGRD'), iB = ix('BRR'), iCe = ix('CEP'), iX = ix('POINT_X'), iY = ix('POINT_Y'), iDB = ix('DATA_BASE');
+    const kind = has('UNI_TR_MT') ? 1 : 2, push = pt || iL >= 0 || iCe >= 0, D = S.D;
+    e.kind('ucs');
+    res = await t.scan(want, r => {
+      e.lines++;
+      const ct = r[iC]; if (!ct) return;
+      const mun = iM >= 0 ? normMun(r[iM]) : '', ci = D.ctmt.id(ct), si = D.sub.id(iS >= 0 ? r[iS] : ''), mi = D.mun.id(mun), ti = D.tr.id(iT >= 0 ? r[iT] : '');
+      setPac(r[iP], ci, si, mi, ti); e.kept++;
+      if (iDB >= 0 && !S.dataBase && r[iDB]) S.dataBase = r[iDB];
+      if (!push || (mun && !inScope(mun))) return;
+      let x = NaN, y = NaN; if (iX >= 0) { x = toNum(r[iX]); y = toNum(r[iY]); if (!(x > -58 && x < -44 && y > -32 && y < -23)) { x = NaN; y = NaN; } }
+      S.P.push(kind, x, y, D.dist.id(iD >= 0 ? r[iD] : ''), ci, si, mi, D.lgrd.id(iL >= 0 ? up(r[iL]) : ''), D.brr.id(iB >= 0 ? up(r[iB]) : ''), D.cep.id(iCe >= 0 ? cepN(r[iCe]) : ''), ti);
+    }, prog);
+  }
+  e.lines = res ? res.rows : e.lines;
+  if (res && t.nrows && res.rows < t.nrows * 0.98) e.short = t.nrows;
+}
+
+/* ================= inversão de fluxo (planilha Celesc_inversao_de_fluxo) ================= */
+const INV_EMB = /*__INV__*/null;
+const INV_FCOLS = ['Alimentador', 'Nome do alimentador', 'Subestação', 'Município principal', 'Norte Catarinense', 'Transformador da SE', 'UCs ativas', 'Carga mínima ao meio-dia (kW)', 'Mês da carga mínima', 'Carga média (kW)', 'Qtd. GD', 'Potência GD instalada (kW)', 'Usinas conectadas (kW instalados)', 'Tipo das usinas', 'Geração média das usinas (kW)', 'Reverso medido no transformador (MWh/ano)', 'Meses com reverso no transformador'];
+const INV_SCOLS = ['Transformador', 'Subestação', 'Município', 'Norte Catarinense', 'Situação medida', 'Potência nominal (MVA)', 'Energia no sentido normal (MWh/ano)', 'Energia reversa medida (MWh/ano)', 'Meses com fluxo reverso', 'Reverso sobre o total', 'GD conectada nos alimentadores (kW)', 'Usinas conectadas (kW)', 'Carga mínima ao meio-dia estimada (kW)', 'Alimentadores'];
+const INV_ST = {
+  'Inversão de fluxo provável': { c: 'crit', s: 'inversão provável' }, 'No limite': { c: 'serious', s: 'no limite' }, 'Atenção': { c: 'warn', s: 'atenção' },
+  'Com folga': { c: 'good', s: 'com folga' }, 'Dedicado a usina': { c: 'info', s: 'dedicado a usina' }, 'Sem carga e sem geração': { c: 'info', s: 'sem carga' }
+};
+const SE_ST = { 'Reverso recorrente': 'crit', 'Reverso frequente': 'serious', 'Reverso pontual': 'warn', 'Sem registro de reverso': 'good' };
+const INV = { def: null, p: null, rows: [], se: new Map(), keys: new Map(), cache: new Map(), src: '' };
+const fmtD = (v, d = 0) => (v == null || v === '' || !isFinite(v)) ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const numv = v => { if (v == null || v === '') return 0; const n = typeof v === 'number' ? v : toNum(v); return isFinite(n) ? n : 0; };
+function invKeys(code, name) {
+  const k = [], an = s => norm(s).replace(/ /g, '');
+  if (code) {
+    const c = String(code).trim(); k.push('C' + an(c));
+    const m = norm(c).match(/^([A-Z]{2,4}) ?0*(\d{1,3})$/); if (m) k.push('C' + m[1] + m[2].padStart(2, '0'));
+    if (/^\d{4,}$/.test(c)) k.push('N' + c.replace(/^0+/, ''));
+  }
+  if (name) {
+    const parts = String(name).split(/\s+-(?:\s+|$)/), base = norm(parts[0]);
+    if (base.length >= 6 && / /.test(base) && /\d/.test(base)) k.push('M' + base);
+    const num = parts.length > 1 ? parts[1].replace(/\D/g, '') : ''; if (num.length >= 4) k.push('N' + num.replace(/^0+/, ''));
+  }
+  return k;
+}
+function invLoad(data, src) {
+  INV.def = { inj: +data.params.inj || 0.75, t1: +data.params.t1 || 1, t2: +data.params.t2 || 0.8, t3: +data.params.t3 || 0.5 };
+  INV.p = { ...INV.def };
+  try { const sv = JSON.parse(localStorage.getItem('alim-inv-p') || 'null'); if (sv && isFinite(sv.inj)) INV.p = { ...INV.def, ...sv }; } catch (_) {}
+  INV.rows = data.feeders.filter(r => r && r[0]).map(r => ({ code: String(r[0]).trim(), name: r[1] || '', sub: r[2] || '', mun: r[3] || '', norte: r[4] || '', trSE: r[5] || '', ucs: numv(r[6]), H: numv(r[7]), mes: r[8] || '', cmed: numv(r[9]), qGD: numv(r[10]), L: numv(r[11]), N: numv(r[12]), O: r[13] || '', P: numv(r[14]), rev: numv(r[15]), mrev: numv(r[16]) }));
+  INV.se = new Map((data.ses || []).filter(r => r && r[0]).map(r => [String(r[0]).trim(), { id: r[0], sub: r[1], mun: r[2], sit: r[4] || '', mva: numv(r[5]), eN: numv(r[6]), eR: numv(r[7]), meses: numv(r[8]), frac: numv(r[9]) }]));
+  INV.keys = new Map(); for (const r of INV.rows) for (const k of invKeys(r.code, r.name)) if (!INV.keys.has(k)) INV.keys.set(k, r);
+  INV.cache = new Map(); INV.src = src; INV.data = data;
+  invRenderCfg();
+}
+function invFor(ci) {
+  if (!INV.rows.length || !ci) return null;
+  if (INV.cache.has(ci)) return INV.cache.get(ci);
+  const code = S.D.ctmt.get(ci), name = S.ctmtName.get(code) || '';
+  let row = null;
+  for (const k of [...invKeys(code, ''), ...invKeys(name, name)]) { const r = INV.keys.get(k); if (r) { row = r; break; } }
+  if (!row && name) {                                    // nomes da planilha podem estar cortados em 27 caracteres
+    const nn = norm(name.split(/\s+-(?:\s+|$)/)[0]);
+    row = INV.rows.find(r => { const b = norm(String(r.name).split(/\s+-(?:\s+|$)/)[0]); return b.length >= 12 && /\d/.test(b) && String(r.name).length >= 26 && nn.startsWith(b); }) || null;
+  }
+  INV.cache.set(ci, row); return row;
+}
+function invCalc(r) {
+  const p = INV.p, M = r.L * p.inj, Q = M + r.P, R = Q - r.H, idx = r.H > 0 ? Q / r.H : null;
+  const T = r.H <= 0 ? (Q > 0 ? 'Dedicado a usina' : 'Sem carga e sem geração') : idx >= p.t1 ? 'Inversão de fluxo provável' : idx >= p.t2 ? 'No limite' : idx >= p.t3 ? 'Atenção' : 'Com folga';
+  const U = Q === 0 ? 'Sem geração' : (M >= r.P ? 'GD solar' : 'Usina ' + (r.O || ''));
+  return { M, Q, R, idx, T, U };
+}
+function invTagT(T) { const st = INV_ST[T]; return st ? `<span class="stag ${st.c}"><i></i>${esc(st.s)}</span>` : ''; }
+function invTag(ci) { const r = invFor(ci); if (!r) return ''; const c = invCalc(r), st = INV_ST[c.T]; return `<span class="stag ${st.c}" title="${esc(c.T)}${c.idx != null ? ' · índice ' + fmtD(c.idx, 2) : ''}"><i></i>${esc(st.s)}</span>`; }
+function invCsv(ci) { const r = invFor(ci); if (!r) return ['', '']; const c = invCalc(r); return [c.T, c.idx != null ? c.idx.toFixed(2).replace('.', ',') : '']; }
+function invMeter(idx) {
+  const p = INV.p, max = Math.max(1.5, Math.min(3, idx * 1.15)), x = v => Math.min(100, v / max * 100);
+  const z = [[0, p.t3, 'good'], [p.t3, p.t2, 'warn'], [p.t2, p.t1, 'serious'], [p.t1, max, 'crit']];
+  return `<div class="meter" role="img" aria-label="Índice geração/carga ${fmtD(idx, 2)}. Atenção a partir de ${fmtD(p.t3, 1)}, no limite a partir de ${fmtD(p.t2, 1)}, inversão provável a partir de ${fmtD(p.t1, 1)}.">
+    <div class="mt-track">${z.map(([a, b, c]) => `<span class="zone ${c}" style="left:${x(a)}%;width:${Math.max(0, x(b) - x(a))}%"></span>`).join('')}</div>
+    <span class="mt-mark" style="left:${x(idx)}%"></span>${idx > max ? '<span class="mt-more">›</span>' : ''}
+    <div class="mt-ticks"><span style="left:0">0</span>${(() => { let last = 0; return [p.t3, p.t2, p.t1].map((v, j) => { const gap = x(v) - last, keep = j === 2 || gap >= 11; if (!keep) return ''; last = x(v); return `<span style="left:${x(v)}%">${fmtD(v, 1)}</span>`; }).join(''); })()}</div></div>`;
+}
+function invBox(ci) {
+  if (!INV.rows.length || !ci) return '';
+  if (S.demo) return '<div class="inv"><span class="eyebrow">Situação estimada · inversão de fluxo</span><p class="small muted" style="margin:0">Na demonstração os alimentadores são fictícios. Com dados reais, este quadro mostra a situação do alimentador na planilha de inversão de fluxo.</p></div>';
+  const r = invFor(ci);
+  if (!r) return `<div class="inv"><span class="eyebrow">Situação estimada · inversão de fluxo</span><p class="small muted" style="margin:0">O alimentador ${esc(feederLabel(ci))} não aparece na planilha de inversão de fluxo (${fmtN(INV.rows.length)} alimentadores). Ele pode ter sido criado depois da data-base ou ter outro código lá.</p></div>`;
+  const c = invCalc(r), st = INV_ST[c.T], se = INV.se.get(String(r.trSE).trim());
+  const kv = [
+    ['Carga mínima ao meio-dia', `${fmtD(r.H)} kW${r.mes ? ` <span class="muted">(${esc(r.mes)})</span>` : ''}`],
+    ['Geração ao meio-dia', `${fmtD(c.Q)} kW <span class="muted">(GD ${fmtD(c.M)} + usinas ${fmtD(r.P)})</span>`],
+    ['Excedente sobre a carga', `${c.R > 0 ? '+' : ''}${fmtD(c.R)} kW`],
+    ['GD instalada', `${fmtD(r.L)} kW em ${fmtN(r.qGD)} sistema${r.qGD === 1 ? '' : 's'}`],
+    ['Usinas conectadas', r.N ? `${fmtD(r.N)} kW${r.O ? ` (${esc(r.O)})` : ''}` : 'nenhuma'],
+    ['Fonte que pesa mais', esc(c.U)],
+    ['UCs ativas', fmtN(r.ucs)],
+    ['Subestação', `${esc(r.sub)}${r.trSE ? ` <span class="muted mono">${esc(r.trSE)}</span>` : ''}`]
+  ];
+  const seLine = se ? `<div class="inv-se"><span class="pill ${SE_ST[se.sit] || ''}"><i></i>${esc(se.sit || 'sem dado')}</span><span class="small">Medido no transformador da SE em 2025: ${fmtN(se.meses)} ${se.meses === 1 ? 'mês' : 'meses'} com fluxo reverso, ${fmtD(se.eR)} MWh/ano no sentido contrário (${fmtD(se.frac * 100, 1)}% da energia).</span></div>` : '';
+  return `<section class="inv" aria-label="Situação estimada de inversão de fluxo">
+    <div class="inv-h"><span class="eyebrow">Situação estimada · inversão de fluxo</span><span class="tiny muted mono">${esc(r.code)} · ${esc(r.name)}</span></div>
+    <div class="inv-st"><span class="pill big ${st.c}"><i></i>${esc(c.T)}</span>${c.idx != null ? `<span class="inv-idx"><span class="mono">${fmtD(c.idx, 2)}</span> <span class="tiny muted">geração ÷ carga ao meio-dia de domingo</span></span>` : ''}</div>
+    ${c.idx != null ? invMeter(c.idx) : ''}
+    <dl class="inv-kv">${kv.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>
+    ${seLine}
+    <p class="tiny muted" style="margin:0">Triagem da planilha Celesc_inversao_de_fluxo (BDGD de 31/12/2025, GD da ANEEL de 10/10/2026), com injeção de ${fmtD(INV.p.inj * 100)}% da potência de GD. Não substitui o parecer de acesso da Celesc.</p>
+  </section>`;
+}
+function invRenderCfg() {
+  const box = $('#invCfg'); if (!box) return;
+  box.hidden = !INV.rows.length;
+  $('#invSrc').textContent = `${INV.src}: ${fmtN(INV.rows.length)} alimentadores e ${fmtN(INV.se.size)} transformadores de subestação.`;
+  $('#pInj').value = INV.p.inj; $('#pT1').value = INV.p.t1; $('#pT2').value = INV.p.t2; $('#pT3').value = INV.p.t3;
+  $('#pReset').disabled = ['inj', 't1', 't2', 't3'].every(k => INV.p[k] === INV.def[k]);
+}
+function invParamsChanged() {
+  const v = id => { const n = parseFloat(String($(id).value).replace(',', '.')); return isFinite(n) && n >= 0 ? n : null; };
+  const inj = v('#pInj'), t1 = v('#pT1'), t2 = v('#pT2'), t3 = v('#pT3');
+  if ([inj, t1, t2, t3].some(x => x == null)) return;
+  INV.p = { inj, t1, t2, t3 };
+  try { localStorage.setItem('alim-inv-p', JSON.stringify(INV.p)); } catch (_) {}
+  $('#pReset').disabled = ['inj', 't1', 't2', 't3'].every(k => INV.p[k] === INV.def[k]);
+  invRefresh();
+}
+function invRefresh() {
+  if (S.last) { renderPoint(S.last); }
+  if ($('#ucQ').value.trim() && $('#ucResult').innerHTML) $('#fUC').requestSubmit();
+  if (activeTab === 'mun' && $('#mSel').value) renderMun();
+}
+async function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('falha ao carregar ' + src)); document.head.appendChild(s); }); }
+async function loadInvXlsx(file, e) {
+  if (!window.XLSX) { try { await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'); } catch (_) { throw new Error('O leitor de Excel não carregou (sem internet?).'); } }
+  const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+  const sheet = pre => { const n = wb.SheetNames.find(x => norm(x).startsWith(pre)); return n ? wb.Sheets[n] : null; };
+  const A = sheet('ALIMENTADORES'); if (!A) throw new Error('Não encontrei a aba “Alimentadores (estimado)”. Esta não parece a planilha de inversão de fluxo.');
+  const table = (ws, cols) => {
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+    const h = (rows[0] || []).map(x => norm(x)), ix = cols.map(c => h.indexOf(norm(c)));
+    return { ok: ix, rows: rows.slice(1).map(r => ix.map(i => i >= 0 ? r[i] : null)) };
+  };
+  const fa = table(A, INV_FCOLS);
+  const need = [0, 7, 11, 14]; if (need.some(i => fa.ok[i] < 0)) throw new Error('Faltam colunas esperadas na aba de alimentadores (Alimentador, Carga mínima, Potência GD, Geração das usinas).');
+  const B = sheet('SUBESTACOES'), fs = B ? table(B, INV_SCOLS) : { rows: [] };
+  const P = sheet('PARAMETROS'), pv = c => { const cell = P && P[c]; return cell ? +cell.v : NaN; };
+  const params = { inj: isFinite(pv('B2')) ? pv('B2') : 0.75, t1: isFinite(pv('B3')) ? pv('B3') : 1, t2: isFinite(pv('B4')) ? pv('B4') : 0.8, t3: isFinite(pv('B5')) ? pv('B5') : 0.5 };
+  const data = { params, feeders: fa.rows.filter(r => r[0]), ses: fs.rows.filter(r => r[0]) };
+  try { localStorage.removeItem('alim-inv-p'); } catch (_) {}
+  invLoad(data, `Planilha carregada (${file.name})`);
+  try { await IDB.put('inv', { data, name: file.name, at: new Date().toISOString() }); } catch (_) {}
+  e.kind('inv'); e.kept = data.feeders.length;
+  invRefresh();
+}
+
+/* ================= índice espacial ================= */
+class Grid {
+  constructor(P, cell = 0.005) {
+    this.cell = cell; const m = new Map();
+    for (let i = 0; i < P.n; i++) { const x = P.x[i]; if (x !== x) continue; const k = this.key(Math.floor(x / cell), Math.floor(P.y[i] / cell)); let a = m.get(k); if (!a) { a = []; m.set(k, a); } a.push(i); }
+    this.m = new Map(); for (const [k, a] of m) this.m.set(k, Int32Array.from(a));
+  }
+  key(ix, iy) { return (ix + 50000) * 100000 + (iy + 50000); }
+  nearest(x, y, k, maxM, accept) {
+    const P = S.P, cos = Math.cos(y * Math.PI / 180), kx = 111320 * cos, ky = 110574;
+    const cmin = Math.min(this.cell * kx, this.cell * ky);
+    const ix0 = Math.floor(x / this.cell), iy0 = Math.floor(y / this.cell), R = Math.ceil(maxM / cmin) + 1;
+    const res = [];
+    for (let r = 0; r <= R; r++) {
+      for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const a = this.m.get(this.key(ix0 + dx, iy0 + dy)); if (!a) continue;
+        for (let t = 0; t < a.length; t++) { const i = a[t]; if (accept && !accept(i)) continue; const ddx = (P.x[i] - x) * kx, ddy = (P.y[i] - y) * ky; const d = Math.sqrt(ddx * ddx + ddy * ddy); if (d <= maxM) res.push([i, d]); }
+      }
+      if (res.length >= k) { res.sort((a, b) => a[1] - b[1]); if (res[k - 1][1] <= r * cmin) break; }
+    }
+    res.sort((a, b) => a[1] - b[1]); return res.slice(0, k);
+  }
+}
+
+/* ================= finalização após carga ================= */
+function finalize() {
+  const P = S.P, c = P.c;
+  if (!P.n && !S.ctmtName.size && !S.U.n) { updateStatus(); return; }
+  // municípios faltando: maioria dos vizinhos ou centróide mais próximo
+  let missing = 0; for (let i = 0; i < P.n; i++) if (!c.mun[i] && P.x[i] === P.x[i]) missing++;
+  if (missing) {
+    const cell = 0.01, cm = new Map();
+    for (let i = 0; i < P.n; i++) { if (!c.mun[i] || P.x[i] !== P.x[i]) continue; const k = Math.floor(P.x[i] / cell) * 100000 + Math.floor(P.y[i] / cell); let o = cm.get(k); if (!o) { o = new Map(); cm.set(k, o); } o.set(c.mun[i], (o.get(c.mun[i]) || 0) + 1); }
+    const best = new Map(); for (const [k, o] of cm) { let bm = 0, bn = -1; for (const [m, n] of o) if (n > bn) { bn = n; bm = m; } best.set(k, bm); }
+    for (let i = 0; i < P.n; i++) {
+      if (c.mun[i] || P.x[i] !== P.x[i]) continue;
+      const ix = Math.floor(P.x[i] / cell), iy = Math.floor(P.y[i] / cell); let m = 0;
+      for (let r = 0; r <= 2 && !m; r++) for (let dx = -r; dx <= r && !m; dx++) for (let dy = -r; dy <= r && !m; dy++) m = best.get((ix + dx) * 100000 + iy + dy) || 0;
+      if (!m) { let bd = Infinity, bc = ''; for (const o of MUN.values()) { const d = (o.lat - P.y[i]) ** 2 + ((o.lon - P.x[i]) * 0.9) ** 2; if (d < bd) { bd = d; bc = o.code; } } m = S.D.mun.id(bc); }
+      c.mun[i] = m;
+    }
+  }
+  const cd = new Map(); for (let i = 0; i < P.n; i++) if (c.dist[i]) cd.set(c.ctmt[i], c.dist[i]);
+  if (cd.size) for (let i = 0; i < P.n; i++) if (!c.dist[i]) { const d = cd.get(c.ctmt[i]); if (d) c.dist[i] = d; }
+  S.mx = new Float64Array(P.n); S.my = new Float64Array(P.n);
+  for (let i = 0; i < P.n; i++) { const x = P.x[i], y = P.y[i]; if (x !== x) { S.mx[i] = NaN; S.my[i] = NaN; continue; } const s = Math.sin(y * Math.PI / 180); S.mx[i] = (x + 180) / 360; S.my[i] = 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI); }
+  S.grid = new Grid(P); S.lgrdTok = null; S.ready = P.n > 0;
+  S.trPos = new Map(); for (let i = 0; i < P.n; i++) if (P.k[i] === 5 && c.tr[i] && P.x[i] === P.x[i]) S.trPos.set(c.tr[i], i);
+  updateUcNeed();
+  updateStatus(); renderDistBox(); fillMunSelects();
+  $('#dataActions').hidden = !S.ready || S.demo;
+  $('#toggleData').hidden = !(S.ready || S.U.n);
+  if (S.ready) {
+    setLayerView({ type: 'all' }); fitData(); $('#mapEmpty').hidden = true;
+    if (!document.querySelector('#fileList .fm.err')) setDataOpen(false);
+  }
+  rerunActive();
+  if ((S.ready || S.U.n) && !S.demo) saveCache();
+}
+function counts() { const P = S.P, n = { uc: 0, tr: 0, net: 0 }; for (let i = 0; i < P.n; i++) { const k = P.k[i]; if (k < 5) n.uc++; else if (k === 5) n.tr++; else n.net++; } return n; }
+function updateStatus() {
+  const st = $('#status'), t = $('#statusTxt'), on = S.ready || S.U.n > 0;
+  st.classList.toggle('on', on && !S.demo); st.classList.toggle('demo', S.demo);
+  if (!on) { t.textContent = S.ctmtName.size ? `${fmtN(S.ctmtName.size)} nomes de alimentadores; faltam os pontos` : 'Nenhuma base carregada'; return; }
+  const n = counts(); const parts = [];
+  if (n.uc) parts.push(`${fmtN(n.uc)} UCs`); if (n.tr) parts.push(`${fmtN(n.tr)} trafos`); if (n.net) parts.push(`${fmtN(n.net)} vértices de rede`);
+  if (S.U.n) parts.push(`${fmtN(S.U.n)} medidores`);
+  if (S.D.ctmt.arr.length > 1) parts.push(`${fmtN(S.D.ctmt.arr.length - 1)} alimentadores`);
+  if (S.dataBase) parts.push(`data-base ${S.dataBase}`);
+  t.textContent = (S.demo ? 'DEMONSTRAÇÃO, dados fictícios · ' : '') + parts.join(' · ');
+}
+function renderDistBox() {
+  const box = $('#distBox'); const P = S.P, cnt = new Map();
+  for (let i = 0; i < P.n; i++) cnt.set(P.c.dist[i], (cnt.get(P.c.dist[i]) || 0) + 1);
+  const list = [...cnt].filter(([d]) => d).sort((a, b) => b[1] - a[1]);
+  if (list.length < 2) { box.hidden = !(list.length === 1 && S.D.dist.get(list[0][0])); box.innerHTML = list.length ? `<span class="muted">Distribuidora (código ANEEL): <span class="mono">${esc(distLabel(list[0][0]))}</span></span>` : ''; return; }
+  box.hidden = false;
+  box.innerHTML = `<span class="eyebrow">Distribuidoras encontradas em SC</span>` + list.map(([d, n], j) =>
+    `<label><input type="checkbox" data-dist="${d}" ${S.distOff.has(d) ? '' : 'checked'}> <span class="mono">${esc(distLabel(d))}</span> <span class="muted">${fmtN(n)} pontos${j === 0 && S.D.dist.get(d) !== '5697' ? ' · maior volume, provavelmente a Celesc' : ''}</span></label>`).join('');
+}
+$('#distBox').addEventListener('change', ev => {
+  const d = +ev.target.dataset.dist; if (ev.target.checked) S.distOff.delete(d); else S.distOff.add(d);
+  layer && layer.redraw(); rerunActive();
+});
+function fillMunSelects() {
+  const P = S.P, cnt = new Map(); for (let i = 0; i < P.n; i++) if (P.k[i] < 5) cnt.set(P.c.mun[i], (cnt.get(P.c.mun[i]) || 0) + 1);
+  for (let i = 0; i < P.n; i++) if (!cnt.has(P.c.mun[i])) cnt.set(P.c.mun[i], 0);
+  const opts = [...cnt].filter(([m]) => m).map(([m, n]) => [m, munName(m), n]).sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+  const html = opts.map(([m, nm, n]) => `<option value="${m}">${esc(nm)}${n ? ` (${fmtN(n)})` : ''}</option>`).join('');
+  const keepS = $('#sMun').value, keepM = $('#mSel').value;
+  $('#sMun').innerHTML = '<option value="">Todos os municípios</option>' + html; $('#sMun').value = keepS;
+  $('#mSel').innerHTML = '<option value="">Escolha um município</option>' + html; $('#mSel').value = keepM;
+}
+
+/* ================= mapa ================= */
+let map = null, layer = null, qMarker = null, refLayer = null, tiles = null;
+const isDark = () => { const t = document.documentElement.dataset.theme; return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches); };
+function token(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+const SLOT_VAR = ['', '--s1', '--s2', '--s3'];
+if (window.L) {
+  map = L.map('map', { zoomControl: true, preferCanvas: true, worldCopyJump: false }).setView([-27.25, -50.45], 7);
+  const setTiles = () => {
+    if (tiles) map.removeLayer(tiles);
+    tiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${isDark() ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`, { subdomains: 'abcd', maxZoom: 20, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>' }).addTo(map);
+  };
+  setTiles();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { setTiles(); layer && layer.redraw(); });
+  new MutationObserver(() => { setTiles(); layer && layer.redraw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  const PointsLayer = L.Layer.extend({
+    onAdd(m) {
+      this._c = L.DomUtil.create('canvas', 'pts-canvas'); this._c.style.pointerEvents = 'none';
+      m.getPanes().overlayPane.appendChild(this._c); this._ctx = this._c.getContext('2d');
+      m.on('moveend resize', this.redraw, this);
+      m.on('zoomstart', () => { this._c.style.visibility = 'hidden'; });
+      m.on('zoomend', () => { this._c.style.visibility = ''; });
+      this.redraw();
+    },
+    onRemove(m) { L.DomUtil.remove(this._c); m.off('moveend resize', this.redraw, this); },
+    redraw() {
+      const m = this._map; if (!m) return;
+      const size = m.getSize(), dpr = window.devicePixelRatio || 1, cv = this._c;
+      L.DomUtil.setPosition(cv, m.containerPointToLayerPoint([0, 0]));
+      cv.width = size.x * dpr; cv.height = size.y * dpr; cv.style.width = size.x + 'px'; cv.style.height = size.y + 'px';
+      const ctx = this._ctx; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, size.x, size.y);
+      const v = this.view; if (!S.ready || !v) return;
+      const z = m.getZoom(), sc = 256 * Math.pow(2, z), pb = m.getPixelBounds(), ox = pb.min.x, oy = pb.min.y;
+      const r = z < 9 ? 1.1 : z < 11 ? 1.6 : z < 13 ? 2.3 : z < 15 ? 3 : 4;
+      const P = S.P, n = v.idx ? v.idx.length : P.n, W = size.x + 8, H = size.y + 8;
+      const groups = [[], [], [], []]; // 0 neutro, 1..3 séries
+      for (let t = 0; t < n; t++) {
+        const i = v.idx ? v.idx[t] : t; const mx = S.mx[i]; if (mx !== mx) continue;
+        if (S.distOff.size && S.distOff.has(P.c.dist[i])) continue;
+        const px = mx * sc - ox, py = S.my[i] * sc - oy; if (px < -8 || py < -8 || px > W || py > H) continue;
+        const slot = v.slots ? (v.slots.get(P.c.ctmt[i]) || 0) : 0;
+        groups[slot].push(px, py, P.k[i]);
+      }
+      const draw = (arr, color, alpha) => {
+        if (!arr.length) return; ctx.globalAlpha = alpha; ctx.fillStyle = color;
+        ctx.beginPath();
+        for (let j = 0; j < arr.length; j += 3) { const x = arr[j], y = arr[j + 1], k = arr[j + 2]; if (k === 5) ctx.rect(x - r, y - r, r * 2, r * 2); else if (k === 6) ctx.rect(x - r * 0.6, y - r * 0.6, r * 1.2, r * 1.2); else { ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, 6.2832); } }
+        ctx.fill();
+        if (r >= 3) { ctx.globalAlpha = Math.min(1, alpha + 0.2); ctx.strokeStyle = token('--surface'); ctx.lineWidth = 1; ctx.stroke(); }
+      };
+      const anySlot = groups[1].length + groups[2].length + groups[3].length > 0;
+      draw(groups[0], token('--pt'), anySlot ? 0.45 : 0.7);
+      for (let s = 3; s >= 1; s--) draw(groups[s], token(SLOT_VAR[s]), 0.95);
+      ctx.globalAlpha = 1;
+    },
+    setView(v) { this.view = v; if (v && v.idx) { v.mask = new Uint8Array(S.P.n); for (const i of v.idx) v.mask[i] = 1; } this.redraw(); }
+  });
+  layer = new PointsLayer().addTo(map);
+  refLayer = L.layerGroup().addTo(map);
+
+  map.on('click', ev => {
+    if (!S.ready) return;
+    const hit = hitTest(ev.latlng);
+    if (hit >= 0) { L.popup({ maxWidth: 300 }).setLatLng([S.P.y[hit], S.P.x[hit]]).setContent(popupHtml(hit)).openOn(map); return; }
+    if (activeTab === 'point') runPointQuery(ev.latlng.lat, ev.latlng.lng, 'Clique no mapa', '', 'map');
+    else L.popup().setLatLng(ev.latlng).setContent(`<button class="btn sm" type="button" data-q="${ev.latlng.lat.toFixed(6)},${ev.latlng.lng.toFixed(6)}">Consultar alimentador aqui</button>`).openOn(map);
+  });
+  map.on('popupopen', e => {
+    const el = e.popup.getElement(); if (!el) return;
+    el.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => {
+      const [la, lo] = b.dataset.q.split(',').map(Number); map.closePopup(); selectTab('point'); runPointQuery(la, lo, 'Ponto escolhido no mapa', '', 'map');
+    }));
+  });
+} else {
+  $('#map').innerHTML = '<div class="note warn" style="margin:16px">O mapa não carregou (sem acesso à internet?). As consultas continuam funcionando.</div>';
+}
+function hitTest(ll) {
+  if (!S.grid || !map) return -1;
+  const mpp = 156543.03 * Math.cos(ll.lat * Math.PI / 180) / Math.pow(2, map.getZoom());
+  const v = layer && layer.view, mask = v && v.mask;
+  const r = S.grid.nearest(ll.lng, ll.lat, 1, Math.max(4, 9 * mpp), i => (!mask || mask[i]) && isOn(i));
+  return r.length ? r[0][0] : -1;
+}
+function popupHtml(i) {
+  const P = S.P, c = P.c, k = P.k[i], fc = feederCode(c.ctmt[i]);
+  const rows = [['Subestação', subLabel(c.ctmt[i], c.sub[i])], ['Município', munName(c.mun[i])]];
+  if (c.lgrd[i]) rows.push(['Logradouro', S.D.lgrd.get(c.lgrd[i])]);
+  if (c.brr[i]) rows.push(['Bairro', S.D.brr.get(c.brr[i])]);
+  if (c.cep[i]) rows.push(['CEP', fmtCep(S.D.cep.get(c.cep[i]))]);
+  if (c.tr[i]) rows.push([k === 5 ? 'Código do trafo' : 'Trafo (UNI_TR_MT)', S.D.tr.get(c.tr[i])]);
+  if (c.dist[i]) rows.push(['Distribuidora', distLabel(c.dist[i])]);
+  return `<div class="pop"><div class="tiny muted">${esc(KIND[k])}</div><b class="mono">${esc(feederLabel(c.ctmt[i]))}</b>${fc ? ` <span class="tiny muted mono">${esc(fc)}</span>` : ''}
+    <dl>${rows.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}${!S.demo && invFor(c.ctmt[i]) ? `<dt>Inversão de fluxo</dt><dd>${invTag(c.ctmt[i])}</dd>` : ''}</dl>
+    <button class="btn sm" type="button" data-q="${P.y[i].toFixed(6)},${P.x[i].toFixed(6)}">Consultar este ponto</button></div>`;
+}
+function setLayerView(v) {
+  if (layer) layer.setView(v);
+  const lg = $('#legend');
+  if (!v || !S.ready) { lg.hidden = true; return; }
+  const hasTr = counts().tr > 0;
+  const items = [];
+  if (v.slots && v.slots.size) for (const [ci, s] of [...v.slots].sort((a, b) => a[1] - b[1])) items.push(`<div class="lg"><span class="sw" style="--c:var(${SLOT_VAR[s]})"></span><span class="mono">${esc(feederLabel(ci))}</span></div>`);
+  items.push(`<div class="lg"><span class="sw"></span><span>${v.slots && v.slots.size ? 'Outros alimentadores' : 'Pontos da base'}</span></div>`);
+  items.push(`<div class="lg tiny muted"><span class="sw" style="--c:var(--ink-2)"></span><span>Empresa (UC)</span></div>`);
+  if (hasTr) items.push(`<div class="lg tiny muted"><span class="sw sq" style="--c:var(--ink-2)"></span><span>Transformador</span></div>`);
+  lg.innerHTML = items.join(''); lg.hidden = false;
+}
+function fitData() {
+  if (!map) return; const P = S.P; let a = 90, b = -90, c = 180, d = -180;
+  for (let i = 0; i < P.n; i++) { const x = P.x[i], y = P.y[i]; if (x !== x) continue; if (y < a) a = y; if (y > b) b = y; if (x < c) c = x; if (x > d) d = x; }
+  if (a <= b) map.fitBounds([[a, c], [b, d]], { padding: [20, 20] });
+}
+function fitIdx(idx, maxZoom = 16) {
+  if (!map || !idx.length) return; const P = S.P; let a = 90, b = -90, c = 180, d = -180, ok = false;
+  for (const i of idx) { const x = P.x[i], y = P.y[i]; if (x !== x) continue; ok = true; if (y < a) a = y; if (y > b) b = y; if (x < c) c = x; if (x > d) d = x; }
+  if (ok) map.fitBounds([[a, c], [b, d]], { padding: [30, 30], maxZoom });
+}
+
+/* ================= consulta por ponto ================= */
+const CONF = { alta: { t: 'Confiança alta', c: 'good' }, media: { t: 'Confiança média', c: 'warn' }, baixa: { t: 'Confiança baixa', c: 'crit' } };
+function analyzePoint(lat, lon) {
+  const P = S.P, c = P.c;
+  const trs = S.grid.nearest(lon, lat, 8, 3000, i => P.k[i] >= 5 && isOn(i));
+  const ucs = S.grid.nearest(lon, lat, 15, 3000, i => P.k[i] < 5 && isOn(i));
+  const all = [...trs.map(([i, d]) => ({ i, d, w: (P.k[i] === 5 ? 2 : 1.5) / (d + 40) })), ...ucs.map(([i, d]) => ({ i, d, w: 1 / (d + 40) }))].sort((a, b) => a.d - b.d);
+  if (!all.length) return { none: true };
+  const by = new Map();
+  for (const a of all) {
+    const ci = c.ctmt[a.i]; let o = by.get(ci);
+    if (!o) { o = { c: ci, s: c.sub[a.i], dist: c.dist[a.i], w: 0, n: 0, nTr: 0, nUc: 0, dmin: Infinity }; by.set(ci, o); }
+    o.w += a.w; o.n++; if (P.k[a.i] >= 5) o.nTr++; else o.nUc++; if (a.d < o.dmin) o.dmin = a.d; if (!o.s && c.sub[a.i]) o.s = c.sub[a.i];
+  }
+  const ranks = [...by.values()].sort((a, b) => b.w - a.w), W = ranks.reduce((s, r) => s + r.w, 0);
+  ranks.forEach(r => r.share = r.w / W);
+  const top = ranks[0], near = all.filter(a => a.d <= 300).length;
+  let conf = 'baixa';
+  if (top.share >= 0.85 && top.dmin <= 150 && near >= 3) conf = 'alta';
+  else if (top.share >= 0.6 && top.dmin <= 400) conf = 'media';
+  const trTop = all.find(a => P.k[a.i] === 5 && c.ctmt[a.i] === top.c) || null;
+  const trNear = all.find(a => P.k[a.i] === 5) || null;
+  return { lat, lon, all, ranks, top, conf, near, trTop, trNear };
+}
+function reasonText(r) {
+  const c = S.P.c;
+  let ref = r.all.filter(a => a.d <= 300); if (ref.length < 3) ref = r.all.slice(0, Math.min(6, r.all.length));
+  const maxd = ref[ref.length - 1].d, nTop = ref.filter(a => c.ctmt[a.i] === r.top.c).length;
+  let t = `${nTop} de ${ref.length} referências até ${fmtM(maxd)} pertencem ao ${feederLabel(r.top.c)}.`;
+  if (r.trNear) { const same = c.ctmt[r.trNear.i] === r.top.c; t += same ? ` O transformador mais próximo, a ${fmtM(r.trNear.d)}, também está nele.` : ` Atenção: o transformador mais próximo (a ${fmtM(r.trNear.d)}) está no ${feederLabel(c.ctmt[r.trNear.i])}.`; }
+  else if (!counts().tr) t += ' Sem a camada de transformadores carregada, a estimativa depende só das unidades consumidoras vizinhas.';
+  if (r.conf === 'baixa') t += ' O ponto fica numa divisa entre alimentadores ou tem poucas referências por perto.';
+  return t;
+}
+const ICON = {
+  se: '<svg width="34" height="28" viewBox="0 0 34 28" aria-hidden="true"><circle cx="12" cy="14" r="8" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/><circle cx="22" cy="14" r="8" fill="none" stroke="var(--ink)" stroke-width="2"/></svg>',
+  al: '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="7" y="7" width="14" height="14" fill="var(--ink)"/></svg>',
+  tr: '<svg width="30" height="28" viewBox="0 0 30 28" aria-hidden="true"><circle cx="11" cy="14" r="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/><circle cx="19" cy="14" r="6" fill="none" stroke="var(--ink)" stroke-width="2"/></svg>',
+  pt: '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="8" fill="var(--ink)" stroke="var(--accent)" stroke-width="3"/></svg>'
+};
+function renderPoint(q) {
+  const el = $('#pointResult'), r = q.r;
+  if (r.none) { el.innerHTML = `<div class="res"><div class="note warn">Nenhum ponto da base num raio de 3 km de ${q.lat.toFixed(5)}, ${q.lon.toFixed(5)}. Confira a posição ou carregue a camada de transformadores (UNTRMT), que cobre também áreas sem empresas.</div></div>`; return; }
+  const P = S.P, c = P.c, top = r.top, cf = CONF[r.conf], fc = feederCode(top.c);
+  const trTxt = r.trTop ? `nº ${esc(S.D.tr.get(c.tr[r.trTop.i]) || '—')} · ${fmtM(r.trTop.d)}` : (counts().tr ? 'nenhum deste alimentador por perto' : 'camada não carregada');
+  const rk = r.ranks.slice(0, 4).map((o, j) => {
+    const col = j < 3 ? `var(${SLOT_VAR[j + 1]})` : 'var(--pt)';
+    const parts = []; if (o.nUc) parts.push(`${o.nUc} UC${o.nUc > 1 ? 's' : ''}`); if (o.nTr) parts.push(`${o.nTr} trafo${o.nTr > 1 ? 's' : ''}`);
+    return `<div class="rk"><span class="sw" style="--c:${col}"></span><span class="nm">${esc(feederLabel(o.c))}</span><span class="tr"><i style="width:${Math.max(2, o.share * 100).toFixed(1)}%;background:${col}"></i></span><span class="pc">${pct(o.share)}</span>
+      <span class="mt">${esc(subLabel(o.c, o.s))} · ${parts.join(' e ')} · mais próximo a ${fmtM(o.dmin)}${INV.rows.length && !S.demo ? ' · ' + (invTag(o.c) || '<span class="tiny muted">fora da planilha</span>') : ''}</span></div>`;
+  }).join('');
+  const refs = r.all.slice(0, 15).map(a => {
+    const i = a.i, k = P.k[i]; const where = k >= 5 ? (c.tr[i] ? `trafo ${S.D.tr.get(c.tr[i])}` : KIND[k]) : [S.D.lgrd.get(c.lgrd[i]), S.D.brr.get(c.brr[i])].filter(Boolean).join(', ');
+    return `<tr><td>${KIND_SHORT[k]}</td><td class="mono">${esc(feederLabel(c.ctmt[i]))}</td><td class="num">${fmtM(a.d)}</td><td>${esc(where)}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<div class="res">
+    <div class="res-head"><span class="pill ${cf.c}"><i></i>${cf.t}</span><span class="tiny muted">${esc(q.origin)}</span></div>
+    <div><div class="eyebrow">Alimentador provável</div>
+      <div class="feeder-big"><span class="sw" style="--c:var(--s1)"></span><span>${esc(feederLabel(top.c))}</span></div>
+      ${fc ? `<div class="tiny muted mono">código BDGD ${esc(fc)}</div>` : ''}</div>
+    <div class="chain" aria-label="Caminho da energia">
+      <div class="node"><span class="ic">${ICON.se}</span><b>Subestação</b><span>${esc(subLabel(top.c, top.s))}</span></div>
+      <div class="node"><span class="ic">${ICON.al}</span><b>Alimentador</b><span class="mono">${esc(feederLabel(top.c))}</span></div>
+      <div class="node"><span class="ic">${ICON.tr}</span><b>Trafo</b><span>${trTxt}</span></div>
+      <div class="node"><span class="ic">${ICON.pt}</span><b>Seu ponto</b><span class="mono">${q.lat.toFixed(5)},<br> ${q.lon.toFixed(5)}</span></div>
+    </div>
+    <p class="why">${esc(reasonText(r))}</p>
+    ${invBox(top.c)}
+    <div><div class="eyebrow" style="margin-bottom:8px">Alimentadores perto deste ponto</div><div class="ranks">${rk}</div></div>
+    <details><summary>Referências usadas (${r.all.length})</summary><div class="tblwrap" style="margin-top:8px"><table><thead><tr><th>Tipo</th><th>Alimentador</th><th class="num">Distância</th><th>Local</th></tr></thead><tbody>${refs}</tbody></table></div></details>
+    <div class="confirm"><span>Para ter certeza, confirme com a Celesc. O texto abaixo já leva a posição e a estimativa.</span>
+      <div class="row"><button class="btn ghost sm" type="button" id="copyReq">Copiar pedido de confirmação</button></div></div>
+  </div>`;
+  $('#copyReq').onclick = () => copyText(requestText({ lat: q.lat, lon: q.lon, addr: q.addr, feeder: feederLabel(top.c), sub: subLabel(top.c, top.s) }));
+}
+function drawRefs(q) {
+  if (!map) return;
+  refLayer.clearLayers();
+  if (qMarker) { qMarker.setLatLng([q.lat, q.lon]); }
+  else {
+    qMarker = L.marker([q.lat, q.lon], { draggable: true, keyboard: true, title: 'Arraste para ajustar', icon: L.divIcon({ className: 'qmark', html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 11] }), zIndexOffset: 1000 }).addTo(map);
+    qMarker.on('dragend', () => { const ll = qMarker.getLatLng(); selectTab('point'); runPointQuery(ll.lat, ll.lng, 'Posição ajustada no mapa', S.last && S.last.addr, 'map'); });
+  }
+  const r = q.r; if (r.none) return;
+  const slots = new Map(r.ranks.slice(0, 3).map((o, j) => [o.c, j + 1]));
+  const P = S.P;
+  for (const a of r.all.slice(0, 12)) {
+    const s = slots.get(P.c.ctmt[a.i]) || 0;
+    L.polyline([[q.lat, q.lon], [P.y[a.i], P.x[a.i]]], { color: s ? token(SLOT_VAR[s]) : token('--pt'), weight: 1.5, opacity: 0.85, dashArray: P.k[a.i] >= 5 ? null : '3 4', interactive: false }).addTo(refLayer);
+  }
+}
+function runPointQuery(lat, lon, origin, addr, reveal) {
+  if (!S.ready) { $('#pointResult').innerHTML = '<p class="nodata">Carregue a base primeiro (ou experimente com dados fictícios) para ver o alimentador.</p>'; if (map) map.setView([lat, lon], 16); return; }
+  const r = analyzePoint(lat, lon); S.last = { lat, lon, origin, addr: addr || '', r };
+  renderPoint(S.last); drawRefs(S.last);
+  if (layer) setLayerView({ type: 'point', slots: r.none ? new Map() : new Map(r.ranks.slice(0, 3).map((o, j) => [o.c, j + 1])) });
+  if (map) { if (r.none) map.setView([lat, lon], 14); else { const far = r.all[Math.min(r.all.length - 1, 7)].d; map.setView([lat, lon], far < 250 ? 17 : far < 600 ? 16 : far < 1500 ? 15 : 14); } }
+  if (!reveal) return;
+  const narrow = matchMedia('(max-width: 900px)').matches;
+  if (reveal === 'map' && narrow) toast(r.none ? 'Sem pontos da base por perto' : `${feederLabel(r.top.c)} · ${CONF[r.conf].t.toLowerCase()} (detalhes acima)`);
+  else $('#pointResult').scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+function requestText(o) {
+  return `Prezados,
+
+solicito a confirmação do alimentador (circuito de média tensão) e da subestação que atendem ${o.uc ? 'a unidade consumidora abaixo' : 'o local abaixo'}.
+
+${o.uc ? `Unidade consumidora: ${o.uc}\n` : ''}${o.addr ? `Endereço: ${o.addr}\n` : ''}${o.lat != null ? `Coordenadas: ${o.lat.toFixed(6)}, ${o.lon.toFixed(6)}\n` : ''}${o.feeder ? `Estimativa pela BDGD/ANEEL${S.dataBase ? ` (data-base ${S.dataBase})` : ''}: alimentador ${o.feeder}, subestação ${o.sub}.\n` : ''}
+Atenciosamente,`;
+}
+
+/* ===== coordenadas e endereço ===== */
+function parseCoords(s) {
+  s = String(s || '').trim(); if (!s) return null;
+  const fix = (a, b) => { a = -Math.abs(a); b = -Math.abs(b); if (Math.abs(a) > Math.abs(b)) [a, b] = [b, a]; return (a > -30.5 && a < -24.5 && b > -55 && b < -47) ? { lat: a, lon: b } : null; };
+  let m = s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || s.match(/[?&](?:q|query|ll|destination)=(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)/i) || s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if (m) return fix(+m[1], +m[2]);
+  const dms = [...s.matchAll(/(\d{1,3})\s*[°º]\s*(\d{1,2})\s*['′]\s*(\d{1,2}(?:[.,]\d+)?)\s*(?:"|″|'')?/g)];
+  if (dms.length >= 2) return fix(+dms[0][1] + dms[0][2] / 60 + toNum(dms[0][3]) / 3600, +dms[1][1] + dms[1][2] / 60 + toNum(dms[1][3]) / 3600);
+  if (/[a-mp-rt-vx-z]/i.test(s.replace(/lat|lon|lng/gi, ''))) return null;
+  const nums = s.match(/-?\d+(?:[.,]\d+)?/g); if (!nums || nums.length !== 2) return null;
+  const a = toNum(nums[0]), b = toNum(nums[1]); if (!(Math.abs(a) < 90 && Math.abs(b) < 180) || Math.abs(a) < 10) return null;
+  return fix(a, b);
+}
+async function geocode(q) {
+  const qq = /\b(SC|SANTA CATARINA)\b/i.test(q) ? q : q + ', Santa Catarina';
+  const inBox = (la, lo) => inSCBox(lo, la);
+  try {
+    const u = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=br&accept-language=pt-BR&viewbox=-54.0,-25.8,-48.2,-29.6&bounded=1&q=${encodeURIComponent(qq)}`;
+    const r = await fetch(u); if (r.ok) { const j = await r.json(); const out = j.map(o => ({ lat: +o.lat, lon: +o.lon, label: o.display_name, src: 'OpenStreetMap' })).filter(o => inBox(o.lat, o.lon)); if (out.length) return out; }
+  } catch (_) {}
+  try {
+    const u = `https://photon.komoot.io/api/?limit=5&lang=default&lat=-27.2&lon=-50.4&bbox=-54.0,-29.6,-48.2,-25.8&q=${encodeURIComponent(qq)}`;
+    const r = await fetch(u); if (r.ok) { const j = await r.json(); const out = (j.features || []).map(f => { const p = f.properties || {}; return { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], label: [p.name, p.street && (p.street + (p.housenumber ? ', ' + p.housenumber : '')), p.district, p.city, p.state].filter(Boolean).join(', '), src: 'Photon/OSM' }; }).filter(o => inBox(o.lat, o.lon)); if (out.length) return out; }
+  } catch (_) {}
+  return null;
+}
+function guessMunFromText(text) {
+  const n = ' ' + norm(text) + ' '; let best = null;
+  for (const o of MUN.values()) if (o.nameN.length > 2 && n.includes(' ' + o.nameN + ' ') && (!best || o.nameN.length > best.nameN.length)) best = o;
+  return best;
+}
+function streetGuess(text) {
+  if (!S.ready) return null;
+  const mun = guessMunFromText(text);
+  let st = String(text).split(/[,;\n]/)[0].replace(/\b(n[º°o.]?\s*)?\d+\w*\b.*$/i, '').trim();
+  if (mun && norm(st) === mun.nameN) return null;
+  if (tokensOf(st).length === 0) return null;
+  const mi = mun ? S.D.mun.map.get(mun.code) : undefined;
+  if (mun && mi === undefined) return { mun, groups: [] };
+  const groups = streetSearch({ mi: mi || 0, street: st });
+  return { mun, street: st, groups };
+}
+
+$('#fPoint').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const q = $('#qPoint').value.trim(); if (!q) return;
+  const co = parseCoords(q); const box = $('#geoBox');
+  if (co) { box.innerHTML = ''; runPointQuery(co.lat, co.lon, 'Coordenadas informadas', '', 'form'); return; }
+  box.innerHTML = '<p class="progress">Procurando o endereço…</p>';
+  const guess = streetGuess(q);
+  const geo = await geocode(q);
+  let html = '';
+  if (geo && geo.length) {
+    html += `<div class="eyebrow">Posição encontrada (${esc(geo[0].src)})</div>` + geo.map((g, j) => `<div class="cand${j === 0 ? ' on' : ''}" data-j="${j}"><span>${esc(g.label)}</span>${j === 0 ? '<span class="tiny muted">em uso</span>' : `<button class="btn ghost sm" type="button" data-use="${j}">Usar</button>`}</div>`).join('');
+    html += '<p class="hint">Confira o marcador no mapa. Se o número da casa não foi achado, a posição é do meio da rua: arraste o marcador até o imóvel.</p>';
+  } else {
+    html += '<div class="note warn">Não consegui localizar o endereço pela internet. Cole as coordenadas (no Google Maps, clique com o botão direito no imóvel e copie os números) ou clique no mapa.</div>';
+  }
+  if (guess && guess.groups && guess.groups.length) {
+    const g = guess.groups[0];
+    html += `<div class="note">Na base, <b>${esc(S.D.lgrd.get(g.lgrd))}</b> (${esc(munName(g.mun))}) aparece com: ${feederChips(g, 3)}${guess.groups.length > 1 ? ` <button class="linkbtn small" type="button" id="seeStreets">ver ${guess.groups.length} ruas parecidas</button>` : ''}</div>`;
+  }
+  box.innerHTML = html;
+  if (geo && geo.length) {
+    S.geo = geo;
+    runPointQuery(geo[0].lat, geo[0].lon, `Endereço via ${geo[0].src}`, q, 'form');
+  } else if (guess && guess.groups && guess.groups.length) {
+    $('#pointResult').innerHTML = '';
+    showStreetGroup(guess.groups[0]);
+  }
+  const ss = $('#seeStreets'); if (ss) ss.onclick = () => { selectTab('street'); $('#sStreet').value = guess.street; if (guess.mun) $('#sMun').value = String(S.D.mun.map.get(guess.mun.code) || ''); doStreetSearch(); };
+});
+$('#geoBox').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-use]'); if (!b || !S.geo) return;
+  const j = +b.dataset.use, g = S.geo[j];
+  document.querySelectorAll('#geoBox .cand').forEach(el => { const on = +el.dataset.j === j; el.classList.toggle('on', on); el.lastElementChild.outerHTML = on ? '<span class="tiny muted">em uso</span>' : `<button class="btn ghost sm" type="button" data-use="${el.dataset.j}">Usar</button>`; });
+  runPointQuery(g.lat, g.lon, `Endereço via ${g.src}`, $('#qPoint').value.trim());
+});
+
+/* ================= busca por rua / CEP ================= */
+function lgrdTokens(li) {
+  if (!S.lgrdTok || S.lgrdTok.length < S.D.lgrd.arr.length) { const old = S.lgrdTok || []; S.lgrdTok = new Array(S.D.lgrd.arr.length); for (let j = 0; j < old.length; j++) S.lgrdTok[j] = old[j]; }
+  return S.lgrdTok[li] || (S.lgrdTok[li] = tokensOf(S.D.lgrd.get(li)));
+}
+function streetSearch({ mi = 0, street = '', bairro = '', cep = '' }) {
+  const P = S.P, c = P.c, qT = tokensOf(street), bT = tokensOf(bairro, false), cd = String(cep).replace(/\D/g, '');
+  const qN = qT.join(' ');
+  const lOk = new Uint8Array(S.D.lgrd.arr.length);
+  if (qT.length) for (let j = 1; j < lOk.length; j++) { const t = lgrdTokens(j); if (tokensMatch(qT, t)) lOk[j] = t.join(' ') === qN ? 2 : 1; }
+  const bOk = new Uint8Array(S.D.brr.arr.length);
+  if (bT.length) for (let j = 1; j < bOk.length; j++) bOk[j] = tokensMatch(bT, tokensOf(S.D.brr.get(j), false)) ? 1 : 0;
+  const groups = new Map();
+  for (let i = 0; i < P.n; i++) {
+    if (P.k[i] >= 5) continue;
+    if (mi && c.mun[i] !== mi) continue;
+    if (qT.length && !lOk[c.lgrd[i]]) continue;
+    if (bT.length && !bOk[c.brr[i]]) continue;
+    if (cd && !S.D.cep.get(c.cep[i]).startsWith(cd)) continue;
+    if (!isOn(i)) continue;
+    const key = c.mun[i] * 4194304 + c.lgrd[i];
+    let g = groups.get(key);
+    if (!g) { g = { mun: c.mun[i], lgrd: c.lgrd[i], exact: lOk[c.lgrd[i]] === 2, n: 0, fe: new Map(), brr: new Map(), cep: new Map(), idx: [] }; groups.set(key, g); }
+    g.n++; g.idx.push(i);
+    g.fe.set(c.ctmt[i], (g.fe.get(c.ctmt[i]) || 0) + 1);
+    if (c.brr[i]) g.brr.set(c.brr[i], (g.brr.get(c.brr[i]) || 0) + 1);
+    if (c.cep[i]) g.cep.set(c.cep[i], (g.cep.get(c.cep[i]) || 0) + 1);
+  }
+  return [...groups.values()].sort((a, b) => (b.exact - a.exact) || (b.n - a.n));
+}
+const topOf = (m, k) => [...m].sort((a, b) => b[1] - a[1]).slice(0, k);
+function feederChips(g, k = 4, slots) {
+  const tot = g.n; const list = topOf(g.fe, 99);
+  return '<span class="chips">' + list.slice(0, k).map(([ci, n], j) => {
+    const s = slots ? slots.get(ci) : j + 1; const col = s && s <= 3 ? `var(${SLOT_VAR[s]})` : 'var(--pt)';
+    return `<span class="chip"><span class="sw" style="--c:${col}"></span><span class="mono">${esc(feederLabel(ci))}</span><span class="muted">${fmtN(n)} · ${pct(n / tot)}</span></span>`;
+  }).join('') + (list.length > k ? `<span class="chip muted">+${list.length - k}</span>` : '') + '</span>';
+}
+function slotsFor(g) { return new Map(topOf(g.fe, 3).map(([ci], j) => [ci, j + 1])); }
+function showStreetGroup(g) {
+  const slots = slotsFor(g);
+  setLayerView({ type: 'street', idx: Int32Array.from(g.idx), slots });
+  if (refLayer) refLayer.clearLayers();
+  fitIdx(g.idx, 17);
+}
+let streetGroups = [];
+function doStreetSearch() {
+  const out = $('#streetResult');
+  if (!S.ready) { out.innerHTML = '<p class="nodata">Carregue a base primeiro.</p>'; return; }
+  const q = { mi: +$('#sMun').value || 0, street: $('#sStreet').value, bairro: $('#sBrr').value, cep: $('#sCep').value };
+  if (!tokensOf(q.street).length && !tokensOf(q.bairro, false).length && q.cep.replace(/\D/g, '').length < 5) { out.innerHTML = '<p class="nodata">Informe um logradouro, um bairro ou pelo menos os 5 primeiros dígitos do CEP.</p>'; return; }
+  streetGroups = streetSearch(q);
+  if (!streetGroups.length) { out.innerHTML = `<div class="note warn">Nada encontrado. Tente só uma parte do nome (ex.: “Getulio”), sem o tipo do logradouro. As planilhas de empresas cobrem apenas ruas com empresas; para as demais, use a aba Ponto.</div>`; return; }
+  const total = streetGroups.reduce((a, g) => a + g.n, 0), mult = streetGroups.filter(g => g.fe.size > 1).length;
+  const shown = streetGroups.slice(0, 80);
+  out.innerHTML = `<p class="hint">${fmtN(streetGroups.length)} logradouro${streetGroups.length > 1 ? 's' : ''} com ${fmtN(total)} unidades consumidoras.${mult ? ` ${mult} deles têm mais de um alimentador: abra no mapa e clique no trecho perto do número que interessa.` : ''}${streetGroups.length > 80 ? ' Mostrando os 80 primeiros.' : ''}</p>` +
+    shown.map((g, j) => {
+      const brr = topOf(g.brr, 2).map(([b]) => S.D.brr.get(b)).join(', ') + (g.brr.size > 2 ? ` +${g.brr.size - 2}` : '');
+      const ceps = topOf(g.cep, 2).map(([p]) => fmtCep(S.D.cep.get(p))).join(', ') + (g.cep.size > 2 ? ` +${g.cep.size - 2}` : '');
+      return `<div class="grp"><div class="grp-h"><b>${esc(S.D.lgrd.get(g.lgrd) || '(sem logradouro)')}</b><span class="small muted">${esc(munName(g.mun))}${brr ? ' · ' + esc(brr) : ''}</span>${ceps ? `<span class="tiny muted mono">CEP ${esc(ceps)}</span>` : ''}</div>
+        ${feederChips(g, 4)}<div><button class="btn ghost sm" type="button" data-g="${j}">Ver no mapa</button></div></div>`;
+    }).join('');
+}
+$('#fStreet').addEventListener('submit', ev => { ev.preventDefault(); doStreetSearch(); });
+$('#streetResult').addEventListener('click', ev => { const b = ev.target.closest('[data-g]'); if (b) showStreetGroup(streetGroups[+b.dataset.g]); });
+
+/* ================= município ================= */
+let munRows = [];
+function renderMun() {
+  const mi = +$('#mSel').value || 0, out = $('#munResult');
+  $('#munExports').hidden = !mi;
+  if (!S.ready) { out.innerHTML = '<p class="nodata">Carregue a base primeiro.</p>'; return; }
+  if (!mi) { out.innerHTML = '<p class="nodata">Escolha um município para ver os alimentadores que o atendem e baixar a planilha de ruas.</p>'; return; }
+  const P = S.P, c = P.c, fe = new Map(), idx = []; let nUC = 0, nTR = 0; const subs = new Set();
+  for (let i = 0; i < P.n; i++) {
+    if (c.mun[i] !== mi || !isOn(i)) continue; idx.push(i);
+    let o = fe.get(c.ctmt[i]); if (!o) { o = { c: c.ctmt[i], s: c.sub[i], d: c.dist[i], uc: 0, tr: 0, net: 0, brr: new Map() }; fe.set(c.ctmt[i], o); }
+    const k = P.k[i]; if (k < 5) { o.uc++; nUC++; if (c.brr[i]) o.brr.set(c.brr[i], (o.brr.get(c.brr[i]) || 0) + 1); } else if (k === 5) { o.tr++; nTR++; } else o.net++;
+    if (!o.s && c.sub[i]) o.s = c.sub[i];
+  }
+  munRows = [...fe.values()].sort((a, b) => (b.uc + b.tr * 3 + b.net) - (a.uc + a.tr * 3 + a.net));
+  munRows.forEach(o => subs.add(subLabel(o.c, o.s)));
+  if (S.munSel !== mi) { S.munSel = mi; S.munSlots = new Map(munRows.slice(0, 3).map((o, j) => [o.c, j + 1])); }
+  out.innerHTML = `<div class="kpis">
+      <div class="kpi"><b>${fmtN(munRows.length)}</b><span>alimentadores</span></div>
+      <div class="kpi"><b>${fmtN(subs.size)}</b><span>subestações</span></div>
+      <div class="kpi"><b>${fmtN(nUC)}</b><span>unidades consumidoras</span></div>
+      <div class="kpi"><b>${nTR ? fmtN(nTR) : '—'}</b><span>transformadores</span></div></div>
+    <p class="hint">Marque até 3 alimentadores para colorir no mapa. Clique numa linha para ver só a área dele.</p>
+    <div class="tblwrap" style="max-height:420px;overflow:auto"><table id="munTbl"><thead><tr><th></th><th>Alimentador · bairros principais</th><th>Subestação</th><th class="num">UCs</th><th class="num">Trafos</th>${INV.rows.length && !S.demo ? '<th>Situação estimada</th>' : ''}</tr></thead><tbody>
+    ${munRows.map((o, j) => { const s = S.munSlots.get(o.c); return `<tr class="clk${s ? ' sel' : ''}" data-r="${j}"><td><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-sel="${j}" ${s ? 'checked' : ''} aria-label="Colorir ${esc(feederLabel(o.c))}"><span class="sw" style="--c:${s ? `var(${SLOT_VAR[s]})` : 'var(--pt)'}"></span></label></td>
+      <td><span class="mono">${esc(feederLabel(o.c))}</span><div class="tiny muted">${esc(topOf(o.brr, 3).map(([b]) => S.D.brr.get(b)).join(', '))}</div></td><td>${esc(subLabel(o.c, o.s))}</td><td class="num">${fmtN(o.uc)}</td><td class="num">${o.tr ? fmtN(o.tr) : '—'}</td>${INV.rows.length && !S.demo ? `<td>${invTag(o.c) || '<span class="tiny muted">fora da planilha</span>'}</td>` : ''}</tr>`; }).join('')}
+    </tbody></table></div>`;
+  S.munIdx = idx;
+  setLayerView({ type: 'mun', idx: Int32Array.from(idx), slots: S.munSlots });
+  if (refLayer) refLayer.clearLayers();
+  fitIdx(idx, 15);
+}
+$('#mSel').addEventListener('change', renderMun);
+$('#munResult').addEventListener('change', ev => {
+  const cb = ev.target.closest('[data-sel]'); if (!cb) return;
+  const o = munRows[+cb.dataset.sel];
+  if (cb.checked) { const used = new Set(S.munSlots.values()); const free = [1, 2, 3].find(s => !used.has(s)); if (!free) { cb.checked = false; toast('Máximo de 3 alimentadores coloridos. Desmarque um.'); return; } S.munSlots.set(o.c, free); }
+  else S.munSlots.delete(o.c);
+  renderMun();
+});
+$('#munResult').addEventListener('click', ev => {
+  if (ev.target.closest('label,input')) return;
+  const tr = ev.target.closest('tr[data-r]'); if (!tr) return;
+  const o = munRows[+tr.dataset.r]; const idx = S.munIdx.filter(i => S.P.c.ctmt[i] === o.c);
+  const slots = new Map([[o.c, S.munSlots.get(o.c) || 1]]);
+  setLayerView({ type: 'mun1', idx: Int32Array.from(S.munIdx), slots }); fitIdx(idx, 16);
+});
+function streetsRows(mi) {
+  const P = S.P, c = P.c, agg = new Map(), tot = new Map();
+  for (let i = 0; i < P.n; i++) {
+    if (P.k[i] >= 5 || (mi && c.mun[i] !== mi) || !isOn(i)) continue;
+    const k2 = `${c.mun[i]}|${c.lgrd[i]}|${c.brr[i]}`; tot.set(k2, (tot.get(k2) || 0) + 1);
+    const k = `${k2}|${c.cep[i]}|${c.ctmt[i]}`; let o = agg.get(k);
+    if (!o) { o = { m: c.mun[i], l: c.lgrd[i], b: c.brr[i], p: c.cep[i], c: c.ctmt[i], s: c.sub[i], d: c.dist[i], n: 0, k2 }; agg.set(k, o); } o.n++;
+  }
+  const rows = [...agg.values()].map(o => [munName(o.m), S.D.brr.get(o.b), S.D.lgrd.get(o.l), fmtCep(S.D.cep.get(o.p)), feederLabel(o.c), S.D.ctmt.get(o.c), subLabel(o.c, o.s), distLabel(o.d), o.n, Math.round(o.n / tot.get(o.k2) * 100), ...invCsv(o.c)]);
+  rows.sort((a, b) => a[0].localeCompare(b[0], 'pt-BR') || a[1].localeCompare(b[1], 'pt-BR') || a[2].localeCompare(b[2], 'pt-BR') || b[8] - a[8]);
+  return [['Município', 'Bairro', 'Logradouro', 'CEP', 'Alimentador', 'Código CTMT', 'Subestação', 'Distribuidora', 'Unidades consumidoras', '% do logradouro no bairro', 'Situação estimada (inversão de fluxo)', 'Índice geração/carga'], ...rows];
+}
+$('#xMunStreets').onclick = () => { const mi = +$('#mSel').value; download(`alimentadores-ruas-${slug(munName(mi))}${S.demo ? '-DEMO' : ''}.csv`, toCSV(streetsRows(mi))); };
+$('#xAllStreets').onclick = () => { download(`alimentadores-ruas-SC${S.demo ? '-DEMO' : ''}.csv`, toCSV(streetsRows(0))); };
+$('#xMunSummary').onclick = () => {
+  const mi = +$('#mSel').value;
+  const rows = munRows.map(o => [munName(mi), feederLabel(o.c), S.D.ctmt.get(o.c), subLabel(o.c, o.s), distLabel(o.d), o.uc, o.tr, topOf(o.brr, 5).map(([b]) => S.D.brr.get(b)).join(', '), ...invCsv(o.c)]);
+  download(`alimentadores-resumo-${slug(munName(mi))}${S.demo ? '-DEMO' : ''}.csv`, toCSV([['Município', 'Alimentador', 'Código CTMT', 'Subestação', 'Distribuidora', 'Unidades consumidoras', 'Transformadores', 'Bairros principais', 'Situação estimada (inversão de fluxo)', 'Índice geração/carga'], ...rows]));
+};
+
+/* ================= lote ================= */
+let batchRows = [], batchStop = false;
+$('#bRun').onclick = async () => {
+  if (!S.ready) { $('#bResult').innerHTML = '<p class="nodata">Carregue a base primeiro.</p>'; return; }
+  const lines = $('#bIn').value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3000);
+  if (!lines.length) return;
+  const online = $('#bOnline').checked; batchRows = []; batchStop = false;
+  $('#bRun').disabled = true; $('#bStop').hidden = false; $('#bExport').hidden = true;
+  $('#bResult').innerHTML = `<div class="tblwrap"><table><thead><tr><th>#</th><th>Entrada</th><th>Alimentador provável</th><th>Subestação</th><th>Confiança</th><th>Posição</th></tr></thead><tbody id="bBody"></tbody></table></div>`;
+  const body = $('#bBody'); let lastGeo = 0;
+  for (let j = 0; j < lines.length && !batchStop; j++) {
+    $('#bProg').textContent = `${j + 1} de ${lines.length}…`;
+    const s = lines[j]; let pos = parseCoords(s), origem = pos ? 'coordenada' : '', row;
+    if (!pos && online) { const wait = 1100 - (Date.now() - lastGeo); if (wait > 0) await sleep(wait); lastGeo = Date.now(); const g = await geocode(s); if (g && g.length) { pos = { lat: g[0].lat, lon: g[0].lon }; origem = g[0].src + ': ' + g[0].label; } }
+    if (pos) {
+      const r = analyzePoint(pos.lat, pos.lon);
+      if (r.none) row = [s, pos.lat.toFixed(6), pos.lon.toFixed(6), origem, '', '', 'sem dados', '', '', '', 'Nenhum ponto da base a menos de 3 km'];
+      else { const t = r.top, sec = r.ranks[1]; row = [s, pos.lat.toFixed(6), pos.lon.toFixed(6), origem, feederLabel(t.c), subLabel(t.c, t.s), CONF[r.conf].t.replace('Confiança ', ''), pct(t.share), sec ? `${feederLabel(sec.c)} (${pct(sec.share)})` : '', r.trNear ? Math.round(r.trNear.d) : '', '', ...invCsv(t.c)] ; }
+    } else {
+      const g = streetGuess(s);
+      if (g && g.groups && g.groups.length) { const gg = g.groups[0], tops = topOf(gg.fe, 2), ci = tops[0][0], sh = tops[0][1] / gg.n; const P = S.P; const i0 = gg.idx.find(i => P.c.ctmt[i] === ci);
+        row = [s, '', '', `base: ${S.D.lgrd.get(gg.lgrd)} (${munName(gg.mun)})`, feederLabel(ci), subLabel(ci, P.c.sub[i0]), sh >= 0.85 && gg.fe.size === 1 ? 'média' : 'baixa', pct(sh), tops[1] ? `${feederLabel(tops[1][0])} (${pct(tops[1][1] / gg.n)})` : '', '', 'Estimado pelo nome da rua, sem posição exata', ...invCsv(ci)];
+      } else row = [s, '', '', '', '', '', 'não localizado', '', '', '', online ? 'Endereço não encontrado' : 'Sem coordenada e sem busca pela internet'];
+    }
+    batchRows.push(row);
+    const cls = { alta: 'good', 'média': 'warn', baixa: 'crit' }[row[6]] || '';
+    body.insertAdjacentHTML('beforeend', `<tr><td class="num">${j + 1}</td><td>${esc(s)}</td><td><span class="mono">${esc(row[4] || '—')}</span>${row[11] ? `<div>${invTagT(row[11])}</div>` : ''}</td><td>${esc(row[5] || '')}</td><td>${cls ? `<span class="pill ${cls}"><i></i>${esc(row[6])}</span>` : esc(row[6])}${row[7] ? ` <span class="tiny muted">${row[7]}</span>` : ''}</td><td class="tiny muted">${esc(row[1] ? `${row[1]}, ${row[2]}` : row[3] || row[10])}</td></tr>`);
+    if (j % 25 === 0) await maybeYield();
+  }
+  $('#bProg').textContent = `${batchRows.length} processada${batchRows.length > 1 ? 's' : ''}${batchStop ? ' (interrompido)' : ''}.`;
+  $('#bRun').disabled = false; $('#bStop').hidden = true; $('#bExport').hidden = !batchRows.length;
+};
+$('#bStop').onclick = () => { batchStop = true; };
+$('#bExport').onclick = () => download(`alimentadores-lote${S.demo ? '-DEMO' : ''}.csv`, toCSV([['Entrada', 'Latitude', 'Longitude', 'Origem da posição', 'Alimentador provável', 'Subestação', 'Confiança', 'Participação', '2ª opção', 'Trafo mais próximo (m)', 'Observação', 'Situação estimada (inversão de fluxo)', 'Índice geração/carga'], ...batchRows]));
+
+/* ================= nº da UC ou do medidor ================= */
+function updateUcNeed() {
+  const n = $('#ucNeed');
+  if (!S.U.n) { n.hidden = false; n.textContent = 'Para consultar pelo número, carregue a pasta .gdb da BDGD da Celesc (basta arrastar a pasta inteira). A página usa a tabela de medidores (EQME), que liga cada UC ao seu ponto de conexão, e a de unidades consumidoras (UCBT_tab), que liga esse ponto ao alimentador.'; }
+  else if (!S.pacInfo.length) { n.hidden = false; n.textContent = `${fmtN(S.U.n)} medidores carregados. Falta a tabela de unidades consumidoras (UCBT_tab) da mesma pasta .gdb para ligar cada UC ao alimentador.`; }
+  else n.hidden = true;
+}
+function parseQuery(q) {
+  let s = String(q || '').toUpperCase().replace(/^\s*(UC|U\.C\.|UNIDADE CONSUMIDORA|MEDIDOR|EQUIPAMENTO|N[º°O]\.?)\s*[:º°.\-]?\s*/, '').trim();
+  if (!s) return {};
+  if (/^[\d\s.\-\/]+$/.test(s)) { const d = s.replace(/\D/g, '').replace(/^0+/, ''); if (!d || d.length > 15) return {}; const n = +d; return { uc: n <= 4294967295 ? n : 0, mn: n }; }
+  const m = parseMeter(s); if (/^\d+$/.test(m.serial)) return { type: m.type, mn: +m.serial };
+  return m.serial ? { alt: m.type + ':' + m.serial } : {};
+}
+function findMany(qs) {
+  const U = S.U, parsed = qs.map(parseQuery), out = qs.map(() => []), wantUC = new Map(), wantMN = new Map();
+  const add = (M, k, v) => { const a = M.get(k); if (a) a.push(v); else M.set(k, [v]); };
+  parsed.forEach((p, k) => {
+    if (p.uc) add(wantUC, p.uc, k);
+    if (p.mn != null) add(wantMN, p.mn, k);
+    if (p.alt) { const i = U.alt.get(p.alt); if (i !== undefined) out[k].push({ i, via: 'medidor' }); else for (const [key, j] of U.alt) if (key.endsWith(':' + p.alt.split(':')[1]) && !p.alt.split(':')[0]) out[k].push({ i: j, via: 'medidor' }); }
+  });
+  if (wantUC.size || wantMN.size) for (let i = 0; i < U.n; i++) {
+    const a = wantUC.get(U.uc[i]); if (a) for (const k of a) out[k].push({ i, via: 'uc' });
+    if (U.mn[i] >= 0) { const b = wantMN.get(U.mn[i]); if (b) for (const k of b) { const p = parsed[k]; if (!p.type || S.mTypeD.get(U.mt[i]) === p.type) out[k].push({ i, via: 'medidor' }); } }
+  }
+  return out;
+}
+function meterLabel(i) { const U = S.U, t = S.mTypeD.get(U.mt[i]), ser = U.mn[i] >= 0 ? String(U.mn[i]) : (U.altRev.get(i) || ''); return (t ? t + ' ' : '') + ser; }
+function ucInfo(i) {
+  const U = S.U, pi = U.pac[i], A = S.pacInfo, o = pi * 4, ok = o + 3 < A.length && A[o] > 0;
+  return { i, uc: U.uc[i], meter: meterLabel(i), fas: S.fasD.get(U.fas[i]), pac: S.pacD.get(pi), ct: ok ? A[o] : 0, sb: ok ? A[o + 1] : 0, mu: ok ? A[o + 2] : 0, tr: ok ? A[o + 3] : 0 };
+}
+function ucCard(f, via) {
+  const head = `<div class="res-head"><span class="pill ${f.ct ? 'good' : 'warn'}"><i></i>${f.ct ? 'Cadastro da distribuidora' : 'Ligação incompleta'}</span><span class="tiny muted">${via === 'uc' ? 'achado pelo nº da UC' : 'achado pelo nº do medidor'}</span></div>`;
+  const ids = `<div class="grp-h"><span class="small">UC <b class="mono">${f.uc || '—'}</b></span><span class="small">Medidor <b class="mono">${esc(f.meter)}</b></span>${f.fas ? `<span class="tiny muted">fases ${esc(f.fas)}</span>` : ''}</div>`;
+  if (!f.ct) {
+    const why = /^DESC/i.test(f.pac) ? `O medidor aparece sem ponto de conexão na base (${esc(f.pac)}), o que costuma indicar ligação desativada na data-base.`
+      : `O ponto de conexão <span class="mono">${esc(f.pac)}</span> não aparece nas tabelas de unidades consumidoras carregadas. Carregue a UCBT_tab (e a UCMT_tab) da mesma pasta .gdb.`;
+    return `<div class="res">${head}${ids}<div class="note warn">${why}</div></div>`;
+  }
+  const trc = S.D.tr.get(f.tr), tp = f.tr && S.trPos ? S.trPos.get(f.tr) : undefined, fc = feederCode(f.ct);
+  return `<div class="res">${head}${ids}
+    <div><div class="eyebrow">Alimentador</div><div class="feeder-big"><span class="sw" style="--c:var(--s1)"></span><span>${esc(feederLabel(f.ct))}</span></div>${fc ? `<div class="tiny muted mono">código BDGD ${esc(fc)}</div>` : ''}</div>
+    <div class="chain" aria-label="Caminho da energia">
+      <div class="node"><span class="ic">${ICON.se}</span><b>Subestação</b><span>${esc(subLabel(f.ct, f.sb))}</span></div>
+      <div class="node"><span class="ic">${ICON.al}</span><b>Alimentador</b><span class="mono">${esc(feederLabel(f.ct))}</span></div>
+      <div class="node"><span class="ic">${ICON.tr}</span><b>Trafo</b><span class="mono">${esc(trc || '—')}</span></div>
+      <div class="node"><span class="ic">${ICON.pt}</span><b>UC</b><span class="mono">${f.uc || esc(f.meter)}</span></div>
+    </div>
+    ${invBox(f.ct)}
+    <div class="pop"><dl><dt>Ponto de conexão</dt><dd class="mono">${esc(f.pac)}</dd><dt>Município</dt><dd>${esc(f.mu ? munName(f.mu) : '—')}</dd>${S.dataBase ? `<dt>Data-base</dt><dd>${esc(S.dataBase)}</dd>` : ''}</dl></div>
+    ${tp !== undefined ? `<div class="row"><button class="btn ghost sm" type="button" data-trpos="${tp}" data-ct="${f.ct}">Ver o transformador no mapa</button></div>` : ''}
+    <p class="hint">Dado do cadastro que a Celesc enviou à ANEEL. Obras e manobras depois da data-base podem ter mudado o atendimento.</p></div>`;
+}
+$('#fUC').addEventListener('submit', ev => {
+  ev.preventDefault(); const q = $('#ucQ').value.trim(), out = $('#ucResult'); if (!q) return;
+  if (!S.U.n) { out.innerHTML = '<p class="nodata">Carregue a pasta .gdb da BDGD da Celesc primeiro (veja o aviso acima).</p>'; return; }
+  const m = findMany([q])[0];
+  if (!m.length) { out.innerHTML = `<div class="note warn">Nenhuma UC ou medidor “${esc(q)}” na base carregada. Confira o número na fatura. UCs ligadas depois da data-base${S.dataBase ? ` (${esc(S.dataBase)})` : ''} não aparecem.</div>`; return; }
+  out.innerHTML = m.slice(0, 6).map(x => ucCard(ucInfo(x.i), x.via)).join('') + (m.length > 6 ? `<p class="hint">Mais ${m.length - 6} resultados não mostrados.</p>` : '');
+  const f = ucInfo(m[0].i); if (f.ct) { $('#ucNum').value = f.uc || ''; updUcMsg(); }
+  out.scrollIntoView({ block: 'nearest' });
+});
+$('#ucResult').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-trpos]'); if (!b || !map) return;
+  const i = +b.dataset.trpos; setLayerView({ type: 'uc', slots: new Map([[+b.dataset.ct, 1]]) }); if (refLayer) refLayer.clearLayers();
+  map.setView([S.P.y[i], S.P.x[i]], 17); L.popup({ maxWidth: 300 }).setLatLng([S.P.y[i], S.P.x[i]]).setContent(popupHtml(i)).openOn(map);
+  if (matchMedia('(max-width: 900px)').matches) $('.mapwrap').scrollIntoView({ block: 'start' });
+});
+let ucBRows = [];
+$('#ucBRun').onclick = async () => {
+  if (!S.U.n) { $('#ucBResult').innerHTML = '<p class="nodata">Carregue a pasta .gdb primeiro.</p>'; return; }
+  const qs = $('#ucBIn').value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 50000); if (!qs.length) return;
+  $('#ucBProg').textContent = 'Consultando…'; await sleep(20);
+  const res = findMany(qs); ucBRows = [];
+  qs.forEach((q, k) => {
+    const m = res[k];
+    if (!m.length) { ucBRows.push([q, 'não encontrado', '', '', '', '', '', '', '', '', '', '', '']); return; }
+    for (const x of m.slice(0, 3)) { const f = ucInfo(x.i); ucBRows.push([q, x.via === 'uc' ? 'nº da UC' : 'nº do medidor', f.uc || '', f.meter, f.pac, f.ct ? feederLabel(f.ct) : '', f.ct ? S.D.ctmt.get(f.ct) : '', f.ct ? subLabel(f.ct, f.sb) : '', S.D.tr.get(f.tr), f.mu ? munName(f.mu) : '', f.ct ? '' : (/^DESC/i.test(f.pac) ? 'medidor sem ponto de conexão' : 'ponto de conexão sem alimentador nas tabelas carregadas'), ...(f.ct ? invCsv(f.ct) : ['', ''])]); }
+  });
+  const shown = ucBRows.slice(0, 500), found = ucBRows.filter(r => r[5]).length;
+  $('#ucBResult').innerHTML = `<div class="tblwrap" style="max-height:420px;overflow:auto"><table><thead><tr><th>Entrada</th><th>UC</th><th>Medidor</th><th>Alimentador</th><th>Subestação</th><th>Município</th></tr></thead><tbody>${shown.map(r => `<tr><td>${esc(r[0])}</td><td class="mono">${esc(r[2])}</td><td class="mono">${esc(r[3])}</td><td><span class="mono">${esc(r[5] || r[10] || r[1])}</span>${r[11] ? `<div>${invTagT(r[11])}</div>` : ''}</td><td>${esc(r[7])}</td><td>${esc(r[9])}</td></tr>`).join('')}</tbody></table></div>`;
+  $('#ucBProg').textContent = `${fmtN(qs.length)} consulta${qs.length > 1 ? 's' : ''} · ${fmtN(found)} com alimentador${ucBRows.length > 500 ? ' · a tabela mostra 500 linhas; o CSV traz todas' : ''}.`;
+  $('#ucBExport').hidden = false;
+};
+$('#ucBExport').onclick = () => download('alimentadores-por-uc.csv', toCSV([['Entrada', 'Encontrado como', 'UC', 'Medidor', 'Ponto de conexão (PAC)', 'Alimentador', 'Código CTMT', 'Subestação', 'Transformador', 'Município', 'Observação', 'Situação estimada (inversão de fluxo)', 'Índice geração/carga'], ...ucBRows]));
+
+/* ================= texto do pedido ================= */
+function updUcMsg() { $('#ucMsg').value = requestText({ uc: $('#ucNum').value.trim() || '__________', addr: $('#ucAddr').value.trim() }); }
+$('#ucNum').addEventListener('input', updUcMsg); $('#ucAddr').addEventListener('input', updUcMsg); updUcMsg();
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-copy]'); if (!b) return; const src = $(b.dataset.copy); copyText(src.value !== undefined ? src.value : src.textContent, src.value !== undefined ? src : null); });
+
+/* ================= abas ================= */
+let activeTab = 'point';
+function selectTab(t) {
+  activeTab = t;
+  document.querySelectorAll('#tabs [role=tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  document.querySelectorAll('.tabpanel[role=tabpanel]').forEach(p => p.hidden = p.id !== 'tp-' + t);
+  try { localStorage.setItem('alim-tab', t); } catch (_) {}
+}
+$('#tabs').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-tab]'); if (!b) return; selectTab(b.dataset.tab);
+  if (!S.ready) return;
+  if (b.dataset.tab === 'mun') renderMun();
+  else if (b.dataset.tab === 'point' && S.last && !S.last.r.none) setLayerView({ type: 'point', slots: new Map(S.last.r.ranks.slice(0, 3).map((o, j) => [o.c, j + 1])) });
+});
+$('#tabs').addEventListener('keydown', ev => {
+  if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+  const tabs = [...document.querySelectorAll('#tabs [role=tab]')], i = tabs.findIndex(b => b.dataset.tab === activeTab);
+  const n = tabs[(i + (ev.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); n.click();
+});
+function rerunActive() {
+  if (!S.ready) return;
+  if (S.last) { const l = S.last; runPointQuery(l.lat, l.lon, l.origin, l.addr); }
+  if (activeTab === 'mun' && $('#mSel').value) { S.munSel = ''; renderMun(); }
+  if (activeTab === 'street' && streetGroups.length) doStreetSearch();
+}
+
+/* ================= arquivos: arrastar e escolher ================= */
+const drop = $('#drop');
+$('#pickBtn').onclick = () => $('#fileIn').click();
+$('#fileIn').addEventListener('change', ev => { loadFiles(ev.target.files); ev.target.value = ''; });
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, ev => { ev.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', ev => { const p = filesFromDrop(ev.dataTransfer); p.then(loadFiles); });
+$('#pickDir').onclick = () => $('#dirIn').click();
+$('#dirIn').addEventListener('change', ev => { loadFiles(ev.target.files); ev.target.value = ''; });
+function filesFromDrop(dt) {
+  const entries = [...(dt.items || [])].map(it => it.webkitGetAsEntry ? it.webkitGetAsEntry() : null).filter(Boolean);
+  if (!entries.length || !entries.some(e => e.isDirectory)) return Promise.resolve([...dt.files]);
+  const out = [];
+  const walk = async entry => {
+    if (entry.isFile) { try { out.push(await new Promise((res, rej) => entry.file(res, rej))); } catch (_) {} }
+    else if (entry.isDirectory) { const r = entry.createReader(); for (;;) { const batch = await new Promise((res, rej) => r.readEntries(res, rej)); if (!batch.length) break; for (const e of batch) await walk(e); } }
+  };
+  return (async () => { for (const e of entries) await walk(e); return out; })();
+}
+window.addEventListener('dragover', ev => ev.preventDefault()); window.addEventListener('drop', ev => ev.preventDefault());
+function setDataOpen(open) { $('#dataBody').hidden = !open; $('#toggleData').textContent = open ? 'Recolher' : 'Mostrar arquivos'; $('#toggleData').setAttribute('aria-expanded', String(open)); }
+$('#toggleData').onclick = () => setDataOpen($('#dataBody').hidden);
+$('#clearBase').onclick = async () => {
+  resetData(); $('#fileList').innerHTML = ''; $('#pointResult').innerHTML = ''; $('#geoBox').innerHTML = ''; $('#streetResult').innerHTML = ''; $('#munResult').innerHTML = ''; $('#bResult').innerHTML = '';
+  $('#steps').hidden = false; $('#demoRow').hidden = false; setDataOpen(true); $('#ucResult').innerHTML = ''; $('#ucBResult').innerHTML = ''; updateUcNeed(); $('#distBox').hidden = true; $('#dataActions').hidden = true; $('#mapEmpty').hidden = false; $('#toggleData').hidden = true; $('#munExports').hidden = true;
+  fillMunSelects(); updateStatus(); setLayerView(null); if (refLayer) refLayer.clearLayers(); if (qMarker) { map.removeLayer(qMarker); qMarker = null; }
+  try { await IDB.del('base'); await IDB.del('meta'); } catch (_) {}
+  $('#restoreBox').hidden = true; toast('Dados removidos deste navegador');
+};
+$('#exportBase').onclick = () => {
+  const P = S.P, c = P.c, rows = [['FONTE', 'DIST', 'CTMT', 'CTMT_NOME', 'SUB', 'SUB_NOME', 'MUN', 'LGRD', 'BRR', 'CEP', 'TR', 'POINT_X', 'POINT_Y', 'DATA_BASE']];
+  for (let i = 0; i < P.n; i++) {
+    const ct = S.D.ctmt.get(c.ctmt[i]), sb = S.D.sub.get(c.sub[i]) || S.ctmtSub.get(ct) || '';
+    rows.push([K_FONTE[P.k[i]], S.D.dist.get(c.dist[i]), ct, S.ctmtName.get(ct) || '', sb, S.subName.get(sb) || '', S.D.mun.get(c.mun[i]), S.D.lgrd.get(c.lgrd[i]), S.D.brr.get(c.brr[i]), S.D.cep.get(c.cep[i]), S.D.tr.get(c.tr[i]), P.x[i] === P.x[i] ? P.x[i].toFixed(6) : '', P.y[i] === P.y[i] ? P.y[i].toFixed(6) : '', i === 0 ? S.dataBase : '']);
+  }
+  download('base-alimentadores-SC.csv', toCSV(rows));
+};
+
+/* ================= cache no navegador ================= */
+const IDB = {
+  open() { return new Promise((res, rej) => { try { const r = indexedDB.open('localizador-alimentadores-sc', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }); },
+  async run(mode, fn) { const db = await this.open(); return new Promise((res, rej) => { const tx = db.transaction('kv', mode), st = tx.objectStore('kv'); const rq = fn(st); tx.oncomplete = () => { res(rq && rq.result); db.close(); }; tx.onerror = tx.onabort = () => { rej(tx.error); db.close(); }; }); },
+  get(k) { return this.run('readonly', st => st.get(k)); },
+  put(k, v) { return this.run('readwrite', st => st.put(v, k)); },
+  del(k) { return this.run('readwrite', st => st.delete(k)); }
+};
+async function saveCache() {
+  try {
+    const P = S.P, n = P.n, c = {}; for (const f of FIELDS) c[f] = P.c[f].slice(0, n);
+    const U = S.U, un = U.n;
+    const base = { n, k: P.k.slice(0, n), x: P.x.slice(0, n), y: P.y.slice(0, n), c, dict: Object.fromEntries(FIELDS.map(f => [f, S.D[f].arr])), ctmtName: [...S.ctmtName], ctmtSub: [...S.ctmtSub], subName: [...S.subName], dataBase: S.dataBase, loaded: [...S.loaded],
+      U: { n: un, uc: U.uc.slice(0, un), pac: U.pac.slice(0, un), mt: U.mt.slice(0, un), mn: U.mn.slice(0, un), fas: U.fas.slice(0, un), alt: [...U.alt], altRev: [...U.altRev] },
+      pacD: S.pacD.arr, pacInfo: S.pacInfo.slice(0, S.pacD.arr.length * 4), mTypeD: S.mTypeD.arr, fasD: S.fasD.arr };
+    await IDB.put('base', base);
+    const cn = counts();
+    await IDB.put('meta', { savedAt: new Date().toISOString(), n, uc: cn.uc, tr: cn.tr, me: un, dataBase: S.dataBase });
+    $('#restoreBox').hidden = false; $('#restoreBox').innerHTML = 'Base guardada neste navegador. Na próxima vez, ela abre sem precisar carregar os arquivos de novo.';
+  } catch (_) { /* sem armazenamento: segue normalmente */ }
+}
+async function restoreCache() {
+  const b = await IDB.get('base'); if (!b) throw new Error('vazio');
+  resetData(); const P = S.P; P.n = b.n; P.cap = Math.max(b.n, 1); P.k = b.k; P.x = b.x; P.y = b.y; P.c = b.c;
+  for (const f of FIELDS) S.D[f] = new Dict(b.dict[f]);
+  S.ctmtName = new Map(b.ctmtName); S.ctmtSub = new Map(b.ctmtSub); S.subName = new Map(b.subName); S.dataBase = b.dataBase || ''; S.loaded = new Set(b.loaded || []);
+  if (b.U && b.U.n) {
+    S.U = { n: b.U.n, cap: b.U.n, uc: b.U.uc, pac: b.U.pac, mt: b.U.mt, mn: b.U.mn, fas: b.U.fas, alt: new Map(b.U.alt), altRev: new Map(b.U.altRev) };
+  }
+  if (b.pacD) { S.pacD = new Dict(b.pacD); S.pacInfo = b.pacInfo; S.mTypeD = new Dict(b.mTypeD); S.fasD = new Dict(b.fasD); }
+  $('#steps').hidden = true; $('#demoRow').hidden = true;
+  finalize();
+}
+(async () => {
+  try {
+    const t = localStorage.getItem('alim-tab'); if (t && $('#tp-' + t)) selectTab(t);
+  } catch (_) {}
+  try {
+    const m = await IDB.get('meta'); if (!m) return;
+    const box = $('#restoreBox'); box.hidden = false;
+    box.innerHTML = `Há uma base guardada neste navegador: ${[m.uc ? `${fmtN(m.uc)} UCs` : '', m.tr ? `${fmtN(m.tr)} trafos` : '', m.me ? `${fmtN(m.me)} medidores` : ''].filter(Boolean).join(', ')}${m.dataBase ? `, data-base ${esc(m.dataBase)}` : ''}, salva em ${new Date(m.savedAt).toLocaleDateString('pt-BR')}.
+      <div class="row" style="margin-top:6px"><button class="btn sm" type="button" id="useCache">Usar base guardada</button><button class="btn ghost sm" type="button" id="dropCache">Apagar</button></div>`;
+    $('#useCache').onclick = async () => { box.innerHTML = 'Abrindo a base guardada…'; try { await restoreCache(); box.innerHTML = 'Base guardada carregada.'; } catch (e) { box.innerHTML = 'Não foi possível abrir a base guardada. Carregue os arquivos de novo.'; } };
+    $('#dropCache').onclick = async () => { try { await IDB.del('base'); await IDB.del('meta'); } catch (_) {} box.hidden = true; };
+  } catch (_) {}
+})();
+
+['#pInj', '#pT1', '#pT2', '#pT3'].forEach(id => $(id).addEventListener('change', invParamsChanged));
+$('#pReset').onclick = () => { INV.p = { ...INV.def }; try { localStorage.removeItem('alim-inv-p'); } catch (_) {} invRenderCfg(); invRefresh(); };
+if (INV_EMB) invLoad(INV_EMB, 'Planilha embutida (Celesc_inversao_de_fluxo.xlsx)');
+(async () => { try { const v = await IDB.get('inv'); if (v && v.data) { invLoad(v.data, `Planilha carregada (${v.name})`); invRefresh(); } } catch (_) {} })();
+
+/* ================= demonstração (dados fictícios) ================= */
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+$('#demoBtn').onclick = () => {
+  resetData(); S.demo = true; $('#fileList').innerHTML = ''; $('#steps').hidden = true;
+  const R = rng(42), D = S.D, lat0 = -26.9194, lon0 = -49.0661, kx = 111320 * Math.cos(lat0 * Math.PI / 180), ky = 110574;
+  const FE = [['DEMO-N1', 'SE-DN', 0, 70], ['DEMO-N2', 'SE-DN', 70, 150], ['DEMO-O1', 'SE-DN', 150, 215], ['DEMO-S1', 'SE-DS', 215, 290], ['DEMO-S2', 'SE-DS', 290, 360]];
+  S.subName.set('SE-DN', 'SE Demonstração Norte'); S.subName.set('SE-DS', 'SE Demonstração Sul');
+  FE.forEach(f => S.ctmtSub.set(f[0], f[1]));
+  const feederAt = (dx, dy) => { const d = Math.hypot(dx, dy); if (d < 450) return FE[4]; let a = Math.atan2(dy, dx) * 180 / Math.PI; a = (a + 360 + (R() - 0.5) * 6) % 360; return FE.find(f => a >= f[2] && a < f[3]) || FE[0]; };
+  const bairroAt = (dx, dy) => 'BAIRRO EXEMPLO ' + 'ABCDEFGH'[(dx > 0 ? 1 : 0) + (dy > 0 ? 2 : 0) + (Math.hypot(dx, dy) > 2200 ? 4 : 0)];
+  const mi = D.mun.id('4202404'), di = D.dist.id('DEMO');
+  for (let s = 0; s < 34; s++) {
+    const cx = (R() - 0.5) * 6500, cy = (R() - 0.5) * 6500, ang = R() * Math.PI, len = 500 + R() * 1600, name = `R EXEMPLO ${s + 1}`, li = D.lgrd.id(name);
+    const nUc = 25 + Math.floor(R() * 50);
+    for (let t = 0; t < nUc; t++) {
+      const u = (R() - 0.5) * len, dx = cx + Math.cos(ang) * u + (R() - 0.5) * 30, dy = cy + Math.sin(ang) * u + (R() - 0.5) * 30, f = feederAt(dx, dy), b = bairroAt(dx, dy);
+      S.P.push(R() < 0.93 ? 1 : 2, lon0 + dx / kx, lat0 + dy / ky, di, D.ctmt.id(f[0]), D.sub.id(f[1]), mi, li, D.brr.id(b), D.cep.id('8900' + String(1000 + s * 7).slice(0, 4)), D.tr.id('DT' + Math.floor(R() * 900 + 100)));
+    }
+    for (let u = -len / 2; u < len / 2; u += 140) {
+      const dx = cx + Math.cos(ang) * u + 12, dy = cy + Math.sin(ang) * u + 12, f = feederAt(dx, dy);
+      S.P.push(5, lon0 + dx / kx, lat0 + dy / ky, di, D.ctmt.id(f[0]), D.sub.id(f[1]), mi, 0, 0, 0, D.tr.id('DT' + Math.floor(R() * 9000 + 1000)));
+    }
+  }
+  S.dataBase = 'fictícia';
+  const fl = $('#fileList'); fl.innerHTML = '<li><div class="demo-banner" style="grid-column:1/-1">Dados fictícios de demonstração, em torno do centro de Blumenau. Os alimentadores DEMO e as ruas EXEMPLO não existem. Para dados reais, carregue os arquivos da ANEEL.</div></li>';
+  finalize();
+  $('#demoRow').hidden = true;
+  $('#qPoint').value = '-26.9160, -49.0590';
+  runPointQuery(-26.916, -49.059, 'Exemplo');
+};
+</script>
+</body>
+</html>
