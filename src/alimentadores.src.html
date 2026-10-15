@@ -232,7 +232,7 @@ tbody tr.clk:hover{background:var(--surface-2)}
 <header class="top">
   <div class="brand">
     <svg width="40" height="28" viewBox="0 0 40 28" aria-hidden="true"><circle cx="14" cy="14" r="10" fill="none" stroke="var(--ink)" stroke-width="2.5"/><circle cx="26" cy="14" r="10" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg>
-    <div><h1>Localizador de Alimentadores SC</h1><p>Endereço, coordenada ou nº da UC → alimentador e subestação, pela base pública BDGD/ANEEL</p></div>
+    <div><h1>Localizador de Alimentadores SC</h1><p>Endereço ou coordenada → alimentador e subestação, pela base pública BDGD/ANEEL</p></div>
   </div>
   <div class="status" id="status" role="status"><i></i><span id="statusTxt">Nenhuma base carregada</span></div>
 </header>
@@ -248,7 +248,7 @@ tbody tr.clk:hover{background:var(--surface-2)}
       <div id="dataBody" class="tabpanel">
         <ol class="steps" id="steps">
           <li><span>Baixe as planilhas de empresas da ANEEL: <a href="https://dadosabertos.aneel.gov.br/dataset/4459e483-451f-4444-8022-bd8b5eac05c5/resource/f6671cba-f269-42ef-8eb3-62cb3bfa0b98/download/ucmt_pj.csv" target="_blank" rel="noopener">UCMT_PJ.csv</a> (153 MB) e <a href="https://dadosabertos.aneel.gov.br/dataset/4459e483-451f-4444-8022-bd8b5eac05c5/resource/3ae4d382-7072-4b08-90a4-dcd187a2eae2/download/ucbt_pj.zip" target="_blank" rel="noopener">UCBT_PJ.zip</a> (1,1 GB). Não precisa descompactar.</span></li>
-          <li><span>Para consultar pelo nº da UC e cobrir áreas residenciais: baixe a BDGD da Celesc no <a href="https://dadosabertos-aneel.opendata.arcgis.com/search?tags=distribuicao" target="_blank" rel="noopener">repositório da ANEEL</a> (procure CELESC), descompacte e use a pasta .gdb inteira.</span></li>
+          <li><span>Para cobrir também áreas residenciais: baixe a BDGD da Celesc no <a href="https://dadosabertos-aneel.opendata.arcgis.com/search?tags=distribuicao" target="_blank" rel="noopener">repositório da ANEEL</a> (procure CELESC), descompacte e use a pasta .gdb inteira.</span></li>
           <li><span>Arraste tudo para a caixa abaixo. A leitura acontece no seu navegador; nenhum arquivo sai do computador.</span></li>
         </ol>
         <div class="drop" id="drop">
@@ -261,9 +261,10 @@ tbody tr.clk:hover{background:var(--surface-2)}
         <ul class="files" id="fileList"></ul>
         <div class="distbox" id="distBox" hidden></div>
         <div class="row" id="dataActions" hidden>
-          <button class="btn ghost sm" type="button" id="exportBase">Baixar base compacta de SC</button>
+          <button class="btn ghost sm" type="button" id="exportPub">Gerar arquivo para publicar no site</button>
           <button class="btn ghost sm" type="button" id="clearBase">Limpar dados</button>
         </div>
+        <div class="note" id="pubOut" hidden></div>
         <div class="row" id="demoRow">
           <button class="btn ghost sm" type="button" id="demoBtn">Experimentar com dados fictícios</button>
           <span class="tiny muted">Mostra como a ferramenta funciona, sem usar dados reais.</span>
@@ -272,7 +273,7 @@ tbody tr.clk:hover{background:var(--surface-2)}
           <summary>Como obter os arquivos</summary>
           <div class="inner">
             <p style="margin:0"><b>Planilhas de empresas (o caminho mais rápido).</b> A ANEEL publica todas as unidades consumidoras de pessoas jurídicas com alimentador (campo CTMT), subestação, rua, bairro, CEP e coordenadas, na <a href="https://dadosabertos.aneel.gov.br/dataset/base-de-dados-geografica-da-distribuidora-bdgd" target="_blank" rel="noopener">página da BDGD no portal de dados abertos</a>. Os arquivos cobrem o Brasil inteiro; esta página guarda só Santa Catarina.</p>
-            <p style="margin:0"><b>BDGD completa da Celesc (recomendado).</b> Baixe no <a href="https://dadosabertos-aneel.opendata.arcgis.com/search?tags=distribuicao" target="_blank" rel="noopener">repositório da ANEEL</a> (procure por CELESC e escolha o ano mais recente) e descompacte. Arraste a pasta .gdb inteira para cá: a página reconhece sozinha as tabelas úteis (medidores EQME, unidades consumidoras UCBT_tab e UCMT_tab, alimentadores CTMT, subestações SUB e transformadores UNTRMT) e ignora as demais. As tabelas de rede em linha (SSDBT, SSDMT, RAMLIG) são puladas por serem muito grandes.</p>
+            <p style="margin:0"><b>BDGD completa da Celesc (recomendado).</b> Baixe no <a href="https://dadosabertos-aneel.opendata.arcgis.com/search?tags=distribuicao" target="_blank" rel="noopener">repositório da ANEEL</a> (procure por CELESC e escolha o ano mais recente) e descompacte. Arraste a pasta .gdb inteira para cá: a página reconhece sozinha as tabelas úteis (transformadores UNTRMT, alimentadores CTMT e subestações SUB) e ignora as demais. As tabelas de rede em linha (SSDBT, SSDMT, RAMLIG) são puladas por serem muito grandes.</p>
             <p style="margin:0">Se o navegador não conseguir ler alguma tabela, exporte pelo QGIS (gratuito):</p>
             <ol>
               <li>Camada ▸ Adicionar camada ▸ Adicionar camada vetorial. Tipo de fonte: <i>Diretório</i>; tipo: <i>OpenFileGDB</i>; escolha a pasta .gdb e marque UNTRMT, CTMT e SUB.</li>
@@ -318,9 +319,6 @@ for lyr in ["CTMT", "SUB"]:
       <div class="tabs" role="tablist" id="tabs">
         <button role="tab" type="button" aria-selected="true" aria-controls="tp-point" id="t-point" data-tab="point">Ponto</button>
         <button role="tab" type="button" aria-selected="false" aria-controls="tp-street" id="t-street" data-tab="street">Rua ou CEP</button>
-        <button role="tab" type="button" aria-selected="false" aria-controls="tp-mun" id="t-mun" data-tab="mun">Município</button>
-        <button role="tab" type="button" aria-selected="false" aria-controls="tp-batch" id="t-batch" data-tab="batch">Lote</button>
-        <button role="tab" type="button" aria-selected="false" aria-controls="tp-uc" id="t-uc" data-tab="uc">Nº da UC</button>
       </div>
 
       <div class="tabpanel" role="tabpanel" id="tp-point" aria-labelledby="t-point">
@@ -353,70 +351,6 @@ for lyr in ["CTMT", "SUB"]:
         <div id="streetResult" class="tabpanel"></div>
       </div>
 
-      <div class="tabpanel" role="tabpanel" id="tp-mun" aria-labelledby="t-mun" hidden>
-        <label class="f" for="mSel">Município
-          <select id="mSel"><option value="">Escolha um município</option></select>
-        </label>
-        <div id="munResult" class="tabpanel"></div>
-        <div class="row" id="munExports" hidden>
-          <button class="btn sm" type="button" id="xMunStreets">Planilha de ruas do município</button>
-          <button class="btn ghost sm" type="button" id="xMunSummary">Resumo de alimentadores</button>
-          <button class="btn ghost sm" type="button" id="xAllStreets">Planilha de SC inteira</button>
-        </div>
-      </div>
-
-      <div class="tabpanel" role="tabpanel" id="tp-batch" aria-labelledby="t-batch" hidden>
-        <label class="f" for="bIn">Uma consulta por linha: coordenadas, link do Google Maps ou endereço</label>
-        <textarea id="bIn" spellcheck="false" placeholder="-26.9194, -49.0661&#10;Rua XV de Novembro, 759, Blumenau&#10;https://maps.google.com/?q=-27.5954,-48.5480"></textarea>
-        <label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="bOnline" checked> Localizar endereços pela internet (OpenStreetMap, 1 por segundo)</label>
-        <div class="row">
-          <button class="btn" type="button" id="bRun">Processar lista</button>
-          <button class="btn ghost" type="button" id="bStop" hidden>Parar</button>
-          <button class="btn ghost" type="button" id="bExport" hidden>Baixar resultado (.csv)</button>
-          <span class="progress" id="bProg"></span>
-        </div>
-        <div id="bResult"></div>
-      </div>
-
-      <div class="tabpanel" role="tabpanel" id="tp-uc" aria-labelledby="t-uc" hidden>
-        <form id="fUC" class="tabpanel" autocomplete="off">
-          <label class="f" for="ucQ">Nº da unidade consumidora ou do medidor (estão na fatura)</label>
-          <div class="inline">
-            <input type="search" id="ucQ" placeholder="0023925192  ·  MD 1504093  ·  RG 4085764">
-            <button class="btn" type="submit">Consultar</button>
-          </div>
-        </form>
-        <div id="ucNeed" class="note">Para consultar pelo número, carregue a pasta .gdb da BDGD da Celesc (basta arrastar a pasta inteira). A página usa a tabela de medidores (EQME), que liga cada UC ao seu ponto de conexão, e a de unidades consumidoras (UCBT_tab), que liga esse ponto ao alimentador.</div>
-        <div id="ucResult" class="tabpanel"></div>
-        <details id="ucBatch">
-          <summary>Várias UCs ou medidores de uma vez</summary>
-          <div class="inner">
-            <textarea id="ucBIn" spellcheck="false" placeholder="0023925192&#10;MD 1504093&#10;44484960"></textarea>
-            <div class="row"><button class="btn sm" type="button" id="ucBRun">Consultar lista</button><button class="btn ghost sm" type="button" id="ucBExport" hidden>Baixar resultado (.csv)</button><span class="progress" id="ucBProg"></span></div>
-            <div id="ucBResult"></div>
-          </div>
-        </details>
-        <details>
-          <summary>Pedir confirmação à Celesc</summary>
-          <div class="inner">
-            <p style="margin:0">A Celesc localiza o transformador e o alimentador de cada UC no cadastro atual, que pode ter mudado depois da data-base da BDGD.</p>
-            <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px">
-              <li>Atendimento Celesc: <span class="mono" id="tel">0800 048 0120</span> <button class="btn ghost sm" type="button" data-copy="#tel">Copiar</button></li>
-              <li>Projetos de geração distribuída: a Consulta de Acesso gera a Informação de Acesso, que indica o ponto de conexão.</li>
-              <li>Muitas UCs de uma vez: pedido pela Lei de Acesso à Informação (a Celesc é sociedade de economia mista).</li>
-            </ul>
-            <div class="grid2">
-              <label class="f" for="ucNum">Nº da unidade consumidora <input type="text" id="ucNum" placeholder="Ex.: 0023925192"></label>
-              <label class="f" for="ucAddr">Endereço (opcional) <input type="text" id="ucAddr" placeholder="Rua, número, bairro, município"></label>
-            </div>
-            <div class="copybox">
-              <label class="f" for="ucMsg">Texto do pedido</label>
-              <textarea id="ucMsg" spellcheck="false"></textarea>
-              <button class="btn sm" type="button" data-copy="#ucMsg" style="align-self:flex-start">Copiar texto</button>
-            </div>
-          </div>
-        </details>
-      </div>
     </section>
     <p class="tiny muted" style="margin:0 2px">Estimativa a partir da Base de Dados Geográfica da Distribuidora (BDGD), publicada anualmente pela ANEEL. A rede muda: alimentadores novos e manobras podem alterar o atendimento depois da data-base. Busca de endereços por © colaboradores do OpenStreetMap.</p>
   </div>
@@ -739,6 +673,7 @@ function fileEntry(name, size) {
 const GDB_MSG = 'Isto é parte de uma pasta .gdb. Arraste a pasta inteira (ou os arquivos .gdbtable) em vez do ZIP ou de arquivos soltos.';
 async function loadFiles(list) {
   const all = [...list]; if (!all.length) return;
+  S.fromPub = false;
   if (S.demo) { resetData(); $('#fileList').innerHTML = ''; }
   $('#steps').hidden = true; $('#demoRow').hidden = true;
   const isAux = f => GDB_AUX.test(f.name) || /^(gdb|timestamps)$/i.test(f.name) || f.size === 0;
@@ -946,8 +881,7 @@ class GdbTable {
 }
 function classifyGdb(t) {
   const F = new Set(t.names), pt = t.geomType === 1;
-  if (F.has('COD_ID') && F.has('PAC') && F.has('DESCR') && (F.has('TIPMED') || F.has('TIP_UNID')) && !F.has('CTMT')) return 'eqme';
-  if (F.has('CTMT') && F.has('PAC') && !F.has('POT_INST') && (F.has('CLAS_SUB') || F.has('GRU_TEN') || F.has('TEN_FORN') || F.has('GRU_TAR') || F.has('CAR_INST'))) return 'ucs';
+  if (F.has('CTMT') && F.has('PAC') && !F.has('POT_INST') && (F.has('LGRD') || F.has('CEP') || pt) && (F.has('CLAS_SUB') || F.has('GRU_TEN') || F.has('TEN_FORN') || F.has('GRU_TAR') || F.has('CAR_INST'))) return 'ucs';
   if (F.has('CTMT') && F.has('POT_NOM') && pt) return 'tr';
   if (F.has('COD_ID') && F.has('NOME') && !F.has('CTMT') && (F.has('PAC_INI') || F.has('TEN_NOM') || F.has('UNI_TR_AT'))) return 'ctmt';
   if (F.has('COD_ID') && F.has('NOME') && F.has('POS') && !F.has('CTMT') && !F.has('SUB')) return 'sub';
@@ -976,7 +910,6 @@ async function loadGdbSet(files) {
   if (skipped) txt += `; ${fmtN(skipped)} sem uso aqui foram ignoradas`;
   if (dup) txt += `; ${dup} já estavam carregadas`;
   txt += '.';
-  if (opened.some(o => o.mode === 'eqme') && !opened.some(o => o.mode === 'ucs')) txt += ' Para ligar os medidores aos alimentadores, carregue também a tabela de unidades consumidoras (UCBT_tab) da mesma pasta .gdb, ou arraste a pasta inteira.';
   if (bad.length) txt += ` Não consegui ler: ${bad.slice(0, 5).join('; ')}${bad.length > 5 ? '…' : ''}`;
   note.set(txt, bad.length > 0 && !opened.length);
 }
@@ -1002,7 +935,7 @@ async function loadGdbTable({ t, mode }, e) {
       e.lines++;
       const ct = r[iC]; if (!ct) return;
       const mun = iM >= 0 ? normMun(r[iM]) : '', ci = D.ctmt.id(ct), si = D.sub.id(iS >= 0 ? r[iS] : ''), mi = D.mun.id(mun), ti = D.tr.id(iT >= 0 ? r[iT] : '');
-      setPac(r[iP], ci, si, mi, ti); e.kept++;
+      e.kept++;
       if (iDB >= 0 && !S.dataBase && r[iDB]) S.dataBase = r[iDB];
       if (!push || (mun && !inScope(mun))) return;
       let x = NaN, y = NaN; if (iX >= 0) { x = toNum(r[iX]); y = toNum(r[iY]); if (!(x > -58 && x < -44 && y > -32 && y < -23)) { x = NaN; y = NaN; } }
@@ -1120,11 +1053,7 @@ function invParamsChanged() {
   $('#pReset').disabled = ['inj', 't1', 't2', 't3'].every(k => INV.p[k] === INV.def[k]);
   invRefresh();
 }
-function invRefresh() {
-  if (S.last) { renderPoint(S.last); }
-  if ($('#ucQ').value.trim() && $('#ucResult').innerHTML) $('#fUC').requestSubmit();
-  if (activeTab === 'mun' && $('#mSel').value) renderMun();
-}
+function invRefresh() { if (S.last) renderPoint(S.last); }
 async function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('falha ao carregar ' + src)); document.head.appendChild(s); }); }
 async function loadInvXlsx(file, e) {
   if (!window.XLSX) { try { await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'); } catch (_) { throw new Error('O leitor de Excel não carregou (sem internet?).'); } }
@@ -1198,16 +1127,15 @@ function finalize() {
   for (let i = 0; i < P.n; i++) { const x = P.x[i], y = P.y[i]; if (x !== x) { S.mx[i] = NaN; S.my[i] = NaN; continue; } const s = Math.sin(y * Math.PI / 180); S.mx[i] = (x + 180) / 360; S.my[i] = 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI); }
   S.grid = new Grid(P); S.lgrdTok = null; S.ready = P.n > 0;
   S.trPos = new Map(); for (let i = 0; i < P.n; i++) if (P.k[i] === 5 && c.tr[i] && P.x[i] === P.x[i]) S.trPos.set(c.tr[i], i);
-  updateUcNeed();
   updateStatus(); renderDistBox(); fillMunSelects();
-  $('#dataActions').hidden = !S.ready || S.demo;
+  $('#dataActions').hidden = !S.ready || S.demo || S.fromPub;
   $('#toggleData').hidden = !(S.ready || S.U.n);
   if (S.ready) {
     setLayerView({ type: 'all' }); fitData(); $('#mapEmpty').hidden = true;
     if (!document.querySelector('#fileList .fm.err')) setDataOpen(false);
   }
   rerunActive();
-  if ((S.ready || S.U.n) && !S.demo) saveCache();
+  if ((S.ready || S.U.n) && !S.demo && !S.fromPub) saveCache();
 }
 function counts() { const P = S.P, n = { uc: 0, tr: 0, net: 0 }; for (let i = 0; i < P.n; i++) { const k = P.k[i]; if (k < 5) n.uc++; else if (k === 5) n.tr++; else n.net++; } return n; }
 function updateStatus() {
@@ -1219,7 +1147,7 @@ function updateStatus() {
   if (S.U.n) parts.push(`${fmtN(S.U.n)} medidores`);
   if (S.D.ctmt.arr.length > 1) parts.push(`${fmtN(S.D.ctmt.arr.length - 1)} alimentadores`);
   if (S.dataBase) parts.push(`data-base ${S.dataBase}`);
-  t.textContent = (S.demo ? 'DEMONSTRAÇÃO, dados fictícios · ' : '') + parts.join(' · ');
+  t.textContent = (S.demo ? 'DEMONSTRAÇÃO, dados fictícios · ' : S.fromPub ? 'Base do site · ' : '') + parts.join(' · ');
 }
 function renderDistBox() {
   const box = $('#distBox'); const P = S.P, cnt = new Map();
@@ -1239,9 +1167,8 @@ function fillMunSelects() {
   for (let i = 0; i < P.n; i++) if (!cnt.has(P.c.mun[i])) cnt.set(P.c.mun[i], 0);
   const opts = [...cnt].filter(([m]) => m).map(([m, n]) => [m, munName(m), n]).sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
   const html = opts.map(([m, nm, n]) => `<option value="${m}">${esc(nm)}${n ? ` (${fmtN(n)})` : ''}</option>`).join('');
-  const keepS = $('#sMun').value, keepM = $('#mSel').value;
+  const keepS = $('#sMun').value;
   $('#sMun').innerHTML = '<option value="">Todos os municípios</option>' + html; $('#sMun').value = keepS;
-  $('#mSel').innerHTML = '<option value="">Escolha um município</option>' + html; $('#mSel').value = keepM;
 }
 
 /* ================= mapa ================= */
@@ -1618,199 +1545,7 @@ function doStreetSearch() {
 $('#fStreet').addEventListener('submit', ev => { ev.preventDefault(); doStreetSearch(); });
 $('#streetResult').addEventListener('click', ev => { const b = ev.target.closest('[data-g]'); if (b) showStreetGroup(streetGroups[+b.dataset.g]); });
 
-/* ================= município ================= */
-let munRows = [];
-function renderMun() {
-  const mi = +$('#mSel').value || 0, out = $('#munResult');
-  $('#munExports').hidden = !mi;
-  if (!S.ready) { out.innerHTML = '<p class="nodata">Carregue a base primeiro.</p>'; return; }
-  if (!mi) { out.innerHTML = '<p class="nodata">Escolha um município para ver os alimentadores que o atendem e baixar a planilha de ruas.</p>'; return; }
-  const P = S.P, c = P.c, fe = new Map(), idx = []; let nUC = 0, nTR = 0; const subs = new Set();
-  for (let i = 0; i < P.n; i++) {
-    if (c.mun[i] !== mi || !isOn(i)) continue; idx.push(i);
-    let o = fe.get(c.ctmt[i]); if (!o) { o = { c: c.ctmt[i], s: c.sub[i], d: c.dist[i], uc: 0, tr: 0, net: 0, brr: new Map() }; fe.set(c.ctmt[i], o); }
-    const k = P.k[i]; if (k < 5) { o.uc++; nUC++; if (c.brr[i]) o.brr.set(c.brr[i], (o.brr.get(c.brr[i]) || 0) + 1); } else if (k === 5) { o.tr++; nTR++; } else o.net++;
-    if (!o.s && c.sub[i]) o.s = c.sub[i];
-  }
-  munRows = [...fe.values()].sort((a, b) => (b.uc + b.tr * 3 + b.net) - (a.uc + a.tr * 3 + a.net));
-  munRows.forEach(o => subs.add(subLabel(o.c, o.s)));
-  if (S.munSel !== mi) { S.munSel = mi; S.munSlots = new Map(munRows.slice(0, 3).map((o, j) => [o.c, j + 1])); }
-  out.innerHTML = `<div class="kpis">
-      <div class="kpi"><b>${fmtN(munRows.length)}</b><span>alimentadores</span></div>
-      <div class="kpi"><b>${fmtN(subs.size)}</b><span>subestações</span></div>
-      <div class="kpi"><b>${fmtN(nUC)}</b><span>unidades consumidoras</span></div>
-      <div class="kpi"><b>${nTR ? fmtN(nTR) : '—'}</b><span>transformadores</span></div></div>
-    <p class="hint">Marque até 3 alimentadores para colorir no mapa. Clique numa linha para ver só a área dele.</p>
-    <div class="tblwrap" style="max-height:420px;overflow:auto"><table id="munTbl"><thead><tr><th></th><th>Alimentador · bairros principais</th><th>Subestação</th><th class="num">UCs</th><th class="num">Trafos</th>${INV.rows.length && !S.demo ? '<th>Situação estimada</th>' : ''}</tr></thead><tbody>
-    ${munRows.map((o, j) => { const s = S.munSlots.get(o.c); return `<tr class="clk${s ? ' sel' : ''}" data-r="${j}"><td><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-sel="${j}" ${s ? 'checked' : ''} aria-label="Colorir ${esc(feederLabel(o.c))}"><span class="sw" style="--c:${s ? `var(${SLOT_VAR[s]})` : 'var(--pt)'}"></span></label></td>
-      <td><span class="mono">${esc(feederLabel(o.c))}</span><div class="tiny muted">${esc(topOf(o.brr, 3).map(([b]) => S.D.brr.get(b)).join(', '))}</div></td><td>${esc(subLabel(o.c, o.s))}</td><td class="num">${fmtN(o.uc)}</td><td class="num">${o.tr ? fmtN(o.tr) : '—'}</td>${INV.rows.length && !S.demo ? `<td>${invTag(o.c) || '<span class="tiny muted">fora da planilha</span>'}</td>` : ''}</tr>`; }).join('')}
-    </tbody></table></div>`;
-  S.munIdx = idx;
-  setLayerView({ type: 'mun', idx: Int32Array.from(idx), slots: S.munSlots });
-  if (refLayer) refLayer.clearLayers();
-  fitIdx(idx, 15);
-}
-$('#mSel').addEventListener('change', renderMun);
-$('#munResult').addEventListener('change', ev => {
-  const cb = ev.target.closest('[data-sel]'); if (!cb) return;
-  const o = munRows[+cb.dataset.sel];
-  if (cb.checked) { const used = new Set(S.munSlots.values()); const free = [1, 2, 3].find(s => !used.has(s)); if (!free) { cb.checked = false; toast('Máximo de 3 alimentadores coloridos. Desmarque um.'); return; } S.munSlots.set(o.c, free); }
-  else S.munSlots.delete(o.c);
-  renderMun();
-});
-$('#munResult').addEventListener('click', ev => {
-  if (ev.target.closest('label,input')) return;
-  const tr = ev.target.closest('tr[data-r]'); if (!tr) return;
-  const o = munRows[+tr.dataset.r]; const idx = S.munIdx.filter(i => S.P.c.ctmt[i] === o.c);
-  const slots = new Map([[o.c, S.munSlots.get(o.c) || 1]]);
-  setLayerView({ type: 'mun1', idx: Int32Array.from(S.munIdx), slots }); fitIdx(idx, 16);
-});
-function streetsRows(mi) {
-  const P = S.P, c = P.c, agg = new Map(), tot = new Map();
-  for (let i = 0; i < P.n; i++) {
-    if (P.k[i] >= 5 || (mi && c.mun[i] !== mi) || !isOn(i)) continue;
-    const k2 = `${c.mun[i]}|${c.lgrd[i]}|${c.brr[i]}`; tot.set(k2, (tot.get(k2) || 0) + 1);
-    const k = `${k2}|${c.cep[i]}|${c.ctmt[i]}`; let o = agg.get(k);
-    if (!o) { o = { m: c.mun[i], l: c.lgrd[i], b: c.brr[i], p: c.cep[i], c: c.ctmt[i], s: c.sub[i], d: c.dist[i], n: 0, k2 }; agg.set(k, o); } o.n++;
-  }
-  const rows = [...agg.values()].map(o => [munName(o.m), S.D.brr.get(o.b), S.D.lgrd.get(o.l), fmtCep(S.D.cep.get(o.p)), feederLabel(o.c), S.D.ctmt.get(o.c), subLabel(o.c, o.s), distLabel(o.d), o.n, Math.round(o.n / tot.get(o.k2) * 100), ...invCsv(o.c)]);
-  rows.sort((a, b) => a[0].localeCompare(b[0], 'pt-BR') || a[1].localeCompare(b[1], 'pt-BR') || a[2].localeCompare(b[2], 'pt-BR') || b[8] - a[8]);
-  return [['Município', 'Bairro', 'Logradouro', 'CEP', 'Alimentador', 'Código CTMT', 'Subestação', 'Distribuidora', 'Unidades consumidoras', '% do logradouro no bairro', 'Situação estimada (inversão de fluxo)', 'Índice geração/carga'], ...rows];
-}
-$('#xMunStreets').onclick = () => { const mi = +$('#mSel').value; download(`alimentadores-ruas-${slug(munName(mi))}${S.demo ? '-DEMO' : ''}.csv`, toCSV(streetsRows(mi))); };
-$('#xAllStreets').onclick = () => { download(`alimentadores-ruas-SC${S.demo ? '-DEMO' : ''}.csv`, toCSV(streetsRows(0))); };
-$('#xMunSummary').onclick = () => {
-  const mi = +$('#mSel').value;
-  const rows = munRows.map(o => [munName(mi), feederLabel(o.c), S.D.ctmt.get(o.c), subLabel(o.c, o.s), distLabel(o.d), o.uc, o.tr, topOf(o.brr, 5).map(([b]) => S.D.brr.get(b)).join(', '), ...invCsv(o.c)]);
-  download(`alimentadores-resumo-${slug(munName(mi))}${S.demo ? '-DEMO' : ''}.csv`, toCSV([['Município', 'Alimentador', 'Código CTMT', 'Subestação', 'Distribuidora', 'Unidades consumidoras', 'Transformadores', 'Bairros principais', 'Situação estimada (inversão de fluxo)', 'Índice geração/carga'], ...rows]));
-};
-
-/* ================= lote ================= */
-let batchRows = [], batchStop = false;
-$('#bRun').onclick = async () => {
-  if (!S.ready) { $('#bResult').innerHTML = '<p class="nodata">Carregue a base primeiro.</p>'; return; }
-  const lines = $('#bIn').value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3000);
-  if (!lines.length) return;
-  const online = $('#bOnline').checked; batchRows = []; batchStop = false;
-  $('#bRun').disabled = true; $('#bStop').hidden = false; $('#bExport').hidden = true;
-  $('#bResult').innerHTML = `<div class="tblwrap"><table><thead><tr><th>#</th><th>Entrada</th><th>Alimentador provável</th><th>Subestação</th><th>Confiança</th><th>Posição</th></tr></thead><tbody id="bBody"></tbody></table></div>`;
-  const body = $('#bBody'); let lastGeo = 0;
-  for (let j = 0; j < lines.length && !batchStop; j++) {
-    $('#bProg').textContent = `${j + 1} de ${lines.length}…`;
-    const s = lines[j]; let pos = parseCoords(s), origem = pos ? 'coordenada' : '', row;
-    if (!pos && online) { const wait = 1100 - (Date.now() - lastGeo); if (wait > 0) await sleep(wait); lastGeo = Date.now(); const g = await geocode(s); if (g && g.length) { pos = { lat: g[0].lat, lon: g[0].lon }; origem = g[0].src + ': ' + g[0].label; } }
-    if (pos) {
-      const r = analyzePoint(pos.lat, pos.lon);
-      if (r.none) row = [s, pos.lat.toFixed(6), pos.lon.toFixed(6), origem, '', '', 'sem dados', '', '', '', 'Nenhum ponto da base a menos de 3 km'];
-      else { const t = r.top, sec = r.ranks[1]; row = [s, pos.lat.toFixed(6), pos.lon.toFixed(6), origem, feederLabel(t.c), subLabel(t.c, t.s), CONF[r.conf].t.replace('Confiança ', ''), pct(t.share), sec ? `${feederLabel(sec.c)} (${pct(sec.share)})` : '', r.trNear ? Math.round(r.trNear.d) : '', '', ...invCsv(t.c)] ; }
-    } else {
-      const g = streetGuess(s);
-      if (g && g.groups && g.groups.length) { const gg = g.groups[0], tops = topOf(gg.fe, 2), ci = tops[0][0], sh = tops[0][1] / gg.n; const P = S.P; const i0 = gg.idx.find(i => P.c.ctmt[i] === ci);
-        row = [s, '', '', `base: ${S.D.lgrd.get(gg.lgrd)} (${munName(gg.mun)})`, feederLabel(ci), subLabel(ci, P.c.sub[i0]), sh >= 0.85 && gg.fe.size === 1 ? 'média' : 'baixa', pct(sh), tops[1] ? `${feederLabel(tops[1][0])} (${pct(tops[1][1] / gg.n)})` : '', '', 'Estimado pelo nome da rua, sem posição exata', ...invCsv(ci)];
-      } else row = [s, '', '', '', '', '', 'não localizado', '', '', '', online ? 'Endereço não encontrado' : 'Sem coordenada e sem busca pela internet'];
-    }
-    batchRows.push(row);
-    const cls = { alta: 'good', 'média': 'warn', baixa: 'crit' }[row[6]] || '';
-    body.insertAdjacentHTML('beforeend', `<tr><td class="num">${j + 1}</td><td>${esc(s)}</td><td><span class="mono">${esc(row[4] || '—')}</span>${row[11] ? `<div>${invTagT(row[11])}</div>` : ''}</td><td>${esc(row[5] || '')}</td><td>${cls ? `<span class="pill ${cls}"><i></i>${esc(row[6])}</span>` : esc(row[6])}${row[7] ? ` <span class="tiny muted">${row[7]}</span>` : ''}</td><td class="tiny muted">${esc(row[1] ? `${row[1]}, ${row[2]}` : row[3] || row[10])}</td></tr>`);
-    if (j % 25 === 0) await maybeYield();
-  }
-  $('#bProg').textContent = `${batchRows.length} processada${batchRows.length > 1 ? 's' : ''}${batchStop ? ' (interrompido)' : ''}.`;
-  $('#bRun').disabled = false; $('#bStop').hidden = true; $('#bExport').hidden = !batchRows.length;
-};
-$('#bStop').onclick = () => { batchStop = true; };
-$('#bExport').onclick = () => download(`alimentadores-lote${S.demo ? '-DEMO' : ''}.csv`, toCSV([['Entrada', 'Latitude', 'Longitude', 'Origem da posição', 'Alimentador provável', 'Subestação', 'Confiança', 'Participação', '2ª opção', 'Trafo mais próximo (m)', 'Observação', 'Situação estimada (inversão de fluxo)', 'Índice geração/carga'], ...batchRows]));
-
-/* ================= nº da UC ou do medidor ================= */
-function updateUcNeed() {
-  const n = $('#ucNeed');
-  if (!S.U.n) { n.hidden = false; n.textContent = 'Para consultar pelo número, carregue a pasta .gdb da BDGD da Celesc (basta arrastar a pasta inteira). A página usa a tabela de medidores (EQME), que liga cada UC ao seu ponto de conexão, e a de unidades consumidoras (UCBT_tab), que liga esse ponto ao alimentador.'; }
-  else if (!S.pacInfo.length) { n.hidden = false; n.textContent = `${fmtN(S.U.n)} medidores carregados. Falta a tabela de unidades consumidoras (UCBT_tab) da mesma pasta .gdb para ligar cada UC ao alimentador.`; }
-  else n.hidden = true;
-}
-function parseQuery(q) {
-  let s = String(q || '').toUpperCase().replace(/^\s*(UC|U\.C\.|UNIDADE CONSUMIDORA|MEDIDOR|EQUIPAMENTO|N[º°O]\.?)\s*[:º°.\-]?\s*/, '').trim();
-  if (!s) return {};
-  if (/^[\d\s.\-\/]+$/.test(s)) { const d = s.replace(/\D/g, '').replace(/^0+/, ''); if (!d || d.length > 15) return {}; const n = +d; return { uc: n <= 4294967295 ? n : 0, mn: n }; }
-  const m = parseMeter(s); if (/^\d+$/.test(m.serial)) return { type: m.type, mn: +m.serial };
-  return m.serial ? { alt: m.type + ':' + m.serial } : {};
-}
-function findMany(qs) {
-  const U = S.U, parsed = qs.map(parseQuery), out = qs.map(() => []), wantUC = new Map(), wantMN = new Map();
-  const add = (M, k, v) => { const a = M.get(k); if (a) a.push(v); else M.set(k, [v]); };
-  parsed.forEach((p, k) => {
-    if (p.uc) add(wantUC, p.uc, k);
-    if (p.mn != null) add(wantMN, p.mn, k);
-    if (p.alt) { const i = U.alt.get(p.alt); if (i !== undefined) out[k].push({ i, via: 'medidor' }); else for (const [key, j] of U.alt) if (key.endsWith(':' + p.alt.split(':')[1]) && !p.alt.split(':')[0]) out[k].push({ i: j, via: 'medidor' }); }
-  });
-  if (wantUC.size || wantMN.size) for (let i = 0; i < U.n; i++) {
-    const a = wantUC.get(U.uc[i]); if (a) for (const k of a) out[k].push({ i, via: 'uc' });
-    if (U.mn[i] >= 0) { const b = wantMN.get(U.mn[i]); if (b) for (const k of b) { const p = parsed[k]; if (!p.type || S.mTypeD.get(U.mt[i]) === p.type) out[k].push({ i, via: 'medidor' }); } }
-  }
-  return out;
-}
-function meterLabel(i) { const U = S.U, t = S.mTypeD.get(U.mt[i]), ser = U.mn[i] >= 0 ? String(U.mn[i]) : (U.altRev.get(i) || ''); return (t ? t + ' ' : '') + ser; }
-function ucInfo(i) {
-  const U = S.U, pi = U.pac[i], A = S.pacInfo, o = pi * 4, ok = o + 3 < A.length && A[o] > 0;
-  return { i, uc: U.uc[i], meter: meterLabel(i), fas: S.fasD.get(U.fas[i]), pac: S.pacD.get(pi), ct: ok ? A[o] : 0, sb: ok ? A[o + 1] : 0, mu: ok ? A[o + 2] : 0, tr: ok ? A[o + 3] : 0 };
-}
-function ucCard(f, via) {
-  const head = `<div class="res-head"><span class="pill ${f.ct ? 'good' : 'warn'}"><i></i>${f.ct ? 'Cadastro da distribuidora' : 'Ligação incompleta'}</span><span class="tiny muted">${via === 'uc' ? 'achado pelo nº da UC' : 'achado pelo nº do medidor'}</span></div>`;
-  const ids = `<div class="grp-h"><span class="small">UC <b class="mono">${f.uc || '—'}</b></span><span class="small">Medidor <b class="mono">${esc(f.meter)}</b></span>${f.fas ? `<span class="tiny muted">fases ${esc(f.fas)}</span>` : ''}</div>`;
-  if (!f.ct) {
-    const why = /^DESC/i.test(f.pac) ? `O medidor aparece sem ponto de conexão na base (${esc(f.pac)}), o que costuma indicar ligação desativada na data-base.`
-      : `O ponto de conexão <span class="mono">${esc(f.pac)}</span> não aparece nas tabelas de unidades consumidoras carregadas. Carregue a UCBT_tab (e a UCMT_tab) da mesma pasta .gdb.`;
-    return `<div class="res">${head}${ids}<div class="note warn">${why}</div></div>`;
-  }
-  const trc = S.D.tr.get(f.tr), tp = f.tr && S.trPos ? S.trPos.get(f.tr) : undefined, fc = feederCode(f.ct);
-  return `<div class="res">${head}${ids}
-    <div><div class="eyebrow">Alimentador</div><div class="feeder-big"><span class="sw" style="--c:var(--s1)"></span><span>${esc(feederLabel(f.ct))}</span></div>${fc ? `<div class="tiny muted mono">código BDGD ${esc(fc)}</div>` : ''}</div>
-    <div class="chain" aria-label="Caminho da energia">
-      <div class="node"><span class="ic">${ICON.se}</span><b>Subestação</b><span>${esc(subLabel(f.ct, f.sb))}</span></div>
-      <div class="node"><span class="ic">${ICON.al}</span><b>Alimentador</b><span class="mono">${esc(feederLabel(f.ct))}</span></div>
-      <div class="node"><span class="ic">${ICON.tr}</span><b>Trafo</b><span class="mono">${esc(trc || '—')}</span></div>
-      <div class="node"><span class="ic">${ICON.pt}</span><b>UC</b><span class="mono">${f.uc || esc(f.meter)}</span></div>
-    </div>
-    ${invBox(f.ct)}
-    <div class="pop"><dl><dt>Ponto de conexão</dt><dd class="mono">${esc(f.pac)}</dd><dt>Município</dt><dd>${esc(f.mu ? munName(f.mu) : '—')}</dd>${S.dataBase ? `<dt>Data-base</dt><dd>${esc(S.dataBase)}</dd>` : ''}</dl></div>
-    ${tp !== undefined ? `<div class="row"><button class="btn ghost sm" type="button" data-trpos="${tp}" data-ct="${f.ct}">Ver o transformador no mapa</button></div>` : ''}
-    <p class="hint">Dado do cadastro que a Celesc enviou à ANEEL. Obras e manobras depois da data-base podem ter mudado o atendimento.</p></div>`;
-}
-$('#fUC').addEventListener('submit', ev => {
-  ev.preventDefault(); const q = $('#ucQ').value.trim(), out = $('#ucResult'); if (!q) return;
-  if (!S.U.n) { out.innerHTML = '<p class="nodata">Carregue a pasta .gdb da BDGD da Celesc primeiro (veja o aviso acima).</p>'; return; }
-  const m = findMany([q])[0];
-  if (!m.length) { out.innerHTML = `<div class="note warn">Nenhuma UC ou medidor “${esc(q)}” na base carregada. Confira o número na fatura. UCs ligadas depois da data-base${S.dataBase ? ` (${esc(S.dataBase)})` : ''} não aparecem.</div>`; return; }
-  out.innerHTML = m.slice(0, 6).map(x => ucCard(ucInfo(x.i), x.via)).join('') + (m.length > 6 ? `<p class="hint">Mais ${m.length - 6} resultados não mostrados.</p>` : '');
-  const f = ucInfo(m[0].i); if (f.ct) { $('#ucNum').value = f.uc || ''; updUcMsg(); }
-  out.scrollIntoView({ block: 'nearest' });
-});
-$('#ucResult').addEventListener('click', ev => {
-  const b = ev.target.closest('[data-trpos]'); if (!b || !map) return;
-  const i = +b.dataset.trpos; setLayerView({ type: 'uc', slots: new Map([[+b.dataset.ct, 1]]) }); if (refLayer) refLayer.clearLayers();
-  map.setView([S.P.y[i], S.P.x[i]], 17); L.popup({ maxWidth: 300 }).setLatLng([S.P.y[i], S.P.x[i]]).setContent(popupHtml(i)).openOn(map);
-  if (matchMedia('(max-width: 900px)').matches) $('.mapwrap').scrollIntoView({ block: 'start' });
-});
-let ucBRows = [];
-$('#ucBRun').onclick = async () => {
-  if (!S.U.n) { $('#ucBResult').innerHTML = '<p class="nodata">Carregue a pasta .gdb primeiro.</p>'; return; }
-  const qs = $('#ucBIn').value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 50000); if (!qs.length) return;
-  $('#ucBProg').textContent = 'Consultando…'; await sleep(20);
-  const res = findMany(qs); ucBRows = [];
-  qs.forEach((q, k) => {
-    const m = res[k];
-    if (!m.length) { ucBRows.push([q, 'não encontrado', '', '', '', '', '', '', '', '', '', '', '']); return; }
-    for (const x of m.slice(0, 3)) { const f = ucInfo(x.i); ucBRows.push([q, x.via === 'uc' ? 'nº da UC' : 'nº do medidor', f.uc || '', f.meter, f.pac, f.ct ? feederLabel(f.ct) : '', f.ct ? S.D.ctmt.get(f.ct) : '', f.ct ? subLabel(f.ct, f.sb) : '', S.D.tr.get(f.tr), f.mu ? munName(f.mu) : '', f.ct ? '' : (/^DESC/i.test(f.pac) ? 'medidor sem ponto de conexão' : 'ponto de conexão sem alimentador nas tabelas carregadas'), ...(f.ct ? invCsv(f.ct) : ['', ''])]); }
-  });
-  const shown = ucBRows.slice(0, 500), found = ucBRows.filter(r => r[5]).length;
-  $('#ucBResult').innerHTML = `<div class="tblwrap" style="max-height:420px;overflow:auto"><table><thead><tr><th>Entrada</th><th>UC</th><th>Medidor</th><th>Alimentador</th><th>Subestação</th><th>Município</th></tr></thead><tbody>${shown.map(r => `<tr><td>${esc(r[0])}</td><td class="mono">${esc(r[2])}</td><td class="mono">${esc(r[3])}</td><td><span class="mono">${esc(r[5] || r[10] || r[1])}</span>${r[11] ? `<div>${invTagT(r[11])}</div>` : ''}</td><td>${esc(r[7])}</td><td>${esc(r[9])}</td></tr>`).join('')}</tbody></table></div>`;
-  $('#ucBProg').textContent = `${fmtN(qs.length)} consulta${qs.length > 1 ? 's' : ''} · ${fmtN(found)} com alimentador${ucBRows.length > 500 ? ' · a tabela mostra 500 linhas; o CSV traz todas' : ''}.`;
-  $('#ucBExport').hidden = false;
-};
-$('#ucBExport').onclick = () => download('alimentadores-por-uc.csv', toCSV([['Entrada', 'Encontrado como', 'UC', 'Medidor', 'Ponto de conexão (PAC)', 'Alimentador', 'Código CTMT', 'Subestação', 'Transformador', 'Município', 'Observação', 'Situação estimada (inversão de fluxo)', 'Índice geração/carga'], ...ucBRows]));
-
-/* ================= texto do pedido ================= */
-function updUcMsg() { $('#ucMsg').value = requestText({ uc: $('#ucNum').value.trim() || '__________', addr: $('#ucAddr').value.trim() }); }
-$('#ucNum').addEventListener('input', updUcMsg); $('#ucAddr').addEventListener('input', updUcMsg); updUcMsg();
+/* ================= copiar ================= */
 document.addEventListener('click', ev => { const b = ev.target.closest('[data-copy]'); if (!b) return; const src = $(b.dataset.copy); copyText(src.value !== undefined ? src.value : src.textContent, src.value !== undefined ? src : null); });
 
 /* ================= abas ================= */
@@ -1824,8 +1559,7 @@ function selectTab(t) {
 $('#tabs').addEventListener('click', ev => {
   const b = ev.target.closest('[data-tab]'); if (!b) return; selectTab(b.dataset.tab);
   if (!S.ready) return;
-  if (b.dataset.tab === 'mun') renderMun();
-  else if (b.dataset.tab === 'point' && S.last && !S.last.r.none) setLayerView({ type: 'point', slots: new Map(S.last.r.ranks.slice(0, 3).map((o, j) => [o.c, j + 1])) });
+  if (b.dataset.tab === 'point' && S.last && !S.last.r.none) setLayerView({ type: 'point', slots: new Map(S.last.r.ranks.slice(0, 3).map((o, j) => [o.c, j + 1])) });
 });
 $('#tabs').addEventListener('keydown', ev => {
   if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
@@ -1835,7 +1569,6 @@ $('#tabs').addEventListener('keydown', ev => {
 function rerunActive() {
   if (!S.ready) return;
   if (S.last) { const l = S.last; runPointQuery(l.lat, l.lon, l.origin, l.addr); }
-  if (activeTab === 'mun' && $('#mSel').value) { S.munSel = ''; renderMun(); }
   if (activeTab === 'street' && streetGroups.length) doStreetSearch();
 }
 
@@ -1862,19 +1595,96 @@ window.addEventListener('dragover', ev => ev.preventDefault()); window.addEventL
 function setDataOpen(open) { $('#dataBody').hidden = !open; $('#toggleData').textContent = open ? 'Recolher' : 'Mostrar arquivos'; $('#toggleData').setAttribute('aria-expanded', String(open)); }
 $('#toggleData').onclick = () => setDataOpen($('#dataBody').hidden);
 $('#clearBase').onclick = async () => {
-  resetData(); $('#fileList').innerHTML = ''; $('#pointResult').innerHTML = ''; $('#geoBox').innerHTML = ''; $('#streetResult').innerHTML = ''; $('#munResult').innerHTML = ''; $('#bResult').innerHTML = '';
-  $('#steps').hidden = false; $('#demoRow').hidden = false; setDataOpen(true); $('#ucResult').innerHTML = ''; $('#ucBResult').innerHTML = ''; updateUcNeed(); $('#distBox').hidden = true; $('#dataActions').hidden = true; $('#mapEmpty').hidden = false; $('#toggleData').hidden = true; $('#munExports').hidden = true;
+  resetData(); $('#fileList').innerHTML = ''; $('#pointResult').innerHTML = ''; $('#geoBox').innerHTML = ''; $('#streetResult').innerHTML = ''; $('#pubOut').hidden = true;
+  $('#steps').hidden = false; $('#demoRow').hidden = false; setDataOpen(true); $('#distBox').hidden = true; $('#dataActions').hidden = true; $('#mapEmpty').hidden = false; $('#toggleData').hidden = true;
   fillMunSelects(); updateStatus(); setLayerView(null); if (refLayer) refLayer.clearLayers(); if (qMarker) { map.removeLayer(qMarker); qMarker = null; }
   try { await IDB.del('base'); await IDB.del('meta'); } catch (_) {}
   $('#restoreBox').hidden = true; toast('Dados removidos deste navegador');
 };
-$('#exportBase').onclick = () => {
-  const P = S.P, c = P.c, rows = [['FONTE', 'DIST', 'CTMT', 'CTMT_NOME', 'SUB', 'SUB_NOME', 'MUN', 'LGRD', 'BRR', 'CEP', 'TR', 'POINT_X', 'POINT_Y', 'DATA_BASE']];
-  for (let i = 0; i < P.n; i++) {
-    const ct = S.D.ctmt.get(c.ctmt[i]), sb = S.D.sub.get(c.sub[i]) || S.ctmtSub.get(ct) || '';
-    rows.push([K_FONTE[P.k[i]], S.D.dist.get(c.dist[i]), ct, S.ctmtName.get(ct) || '', sb, S.subName.get(sb) || '', S.D.mun.get(c.mun[i]), S.D.lgrd.get(c.lgrd[i]), S.D.brr.get(c.brr[i]), S.D.cep.get(c.cep[i]), S.D.tr.get(c.tr[i]), P.x[i] === P.x[i] ? P.x[i].toFixed(6) : '', P.y[i] === P.y[i] ? P.y[i].toFixed(6) : '', i === 0 ? S.dataBase : '']);
+/* ================= base publicada no site (arquivo base-sc.bin.gz ao lado da página) ================= */
+const PUB_FILE = 'base-sc.bin.gz';
+const PUB_TYPES = { Uint8Array, Uint16Array, Uint32Array, Int32Array, Float32Array, Float64Array };
+function colPack(arr, n) {
+  let max = 0; for (let i = 0; i < n; i++) if (arr[i] > max) max = arr[i];
+  const A = max < 256 ? Uint8Array : max < 65536 ? Uint16Array : Uint32Array, out = new A(n);
+  for (let i = 0; i < n; i++) out[i] = arr[i]; return out;
+}
+function toPlanes(a) { const w = a.BYTES_PER_ELEMENT, n = a.length, src = new Uint8Array(a.buffer, a.byteOffset, n * w), out = new Uint8Array(n * w); for (let b = 0; b < w; b++) { const o = b * n; for (let i = 0; i < n; i++) out[o + i] = src[i * w + b]; } return out; }
+function fromPlanes(u8, C, n) { const w = C.BYTES_PER_ELEMENT, out = new Uint8Array(n * w); for (let b = 0; b < w; b++) { const o = b * n; for (let i = 0; i < n; i++) out[i * w + b] = u8[o + i]; } return new C(out.buffer); }
+function packSections(meta, secs) {
+  const enc = new TextEncoder(), parts = [], desc = []; let off = 0;
+  for (const [name, v] of Object.entries(secs)) {
+    let bytes, d;
+    if (typeof v === 'string') { bytes = enc.encode(v); d = { name, type: 'str' }; }
+    else { const planes = v.BYTES_PER_ELEMENT > 1; bytes = planes ? toPlanes(v) : new Uint8Array(v.buffer, v.byteOffset, v.byteLength); d = { name, type: v.constructor.name, n: v.length, planes }; }
+    d.off = off; d.len = bytes.byteLength; desc.push(d); parts.push(bytes); off += bytes.byteLength;
   }
-  download('base-alimentadores-SC.csv', toCSV(rows));
+  const head = enc.encode(JSON.stringify({ ...meta, secs: desc })), pre = new Uint8Array(12), dv = new DataView(pre.buffer);
+  pre.set([65, 76, 83, 67]); dv.setUint32(4, 1, true); dv.setUint32(8, head.byteLength, true);
+  return new Blob([pre, head, ...parts]);
+}
+function unpackSections(buf) {
+  const u8 = new Uint8Array(buf);
+  if (u8[0] !== 65 || u8[1] !== 76 || u8[2] !== 83 || u8[3] !== 67) throw new Error('arquivo de base em formato desconhecido');
+  const hl = new DataView(buf).getUint32(8, true), meta = JSON.parse(new TextDecoder().decode(u8.subarray(12, 12 + hl))), body = 12 + hl, out = {};
+  for (const s of meta.secs) {
+    const b = u8.subarray(body + s.off, body + s.off + s.len);
+    if (s.type === 'str') out[s.name] = new TextDecoder().decode(b);
+    else { const C = PUB_TYPES[s.type]; if (!C) throw new Error('tipo desconhecido ' + s.type); out[s.name] = s.planes ? fromPlanes(b, C, s.n) : new C(b.slice().buffer); }
+  }
+  return { meta, secs: out };
+}
+async function gzipBlob(blob) { return new Response(blob.stream().pipeThrough(new CompressionStream('gzip'))).blob(); }
+async function gunzipU8(u8) { return (u8[0] === 0x1f && u8[1] === 0x8b) ? new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer() : u8.slice().buffer; }
+function downloadBlob(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); }
+async function buildPubFile() {
+  const P = S.P, n = P.n, secs = { k: P.k.slice(0, n), x: Float32Array.from(P.x.subarray(0, n)), y: Float32Array.from(P.y.subarray(0, n)) };
+  for (const f of FIELDS) secs['c_' + f] = colPack(P.c[f], n);
+  for (const f of FIELDS) secs['d_' + f] = S.D[f].arr.map(s => String(s).replace(/\n/g, ' ')).join('\n');
+  const meta = { formato: 'localizador-alimentadores-sc', versao: 1, gerado: new Date().toISOString(), n, dataBase: S.dataBase, contagens: counts(),
+    ctmtName: [...S.ctmtName], ctmtSub: [...S.ctmtSub], subName: [...S.subName], fontes: [...new Set([...S.loaded].map(k => k.split('|')[0]))] };
+  return gzipBlob(packSections(meta, secs));
+}
+function applyPub({ meta, secs }) {
+  resetData();
+  const P = S.P, n = meta.n; P.n = n; P.cap = Math.max(n, 1);
+  P.k = secs.k; P.x = Float64Array.from(secs.x); P.y = Float64Array.from(secs.y);
+  for (const f of FIELDS) { P.c[f] = Uint32Array.from(secs['c_' + f]); S.D[f] = new Dict(secs['d_' + f].split('\n')); }
+  S.ctmtName = new Map(meta.ctmtName || []); S.ctmtSub = new Map(meta.ctmtSub || []); S.subName = new Map(meta.subName || []);
+  S.dataBase = meta.dataBase || ''; S.fromPub = true; S.pubMeta = meta;
+  $('#steps').hidden = true; $('#demoRow').hidden = true;
+  finalize();
+  const po = $('#pubOut'); po.hidden = false; po.className = 'note';
+  po.textContent = `Base publicada no site, gerada em ${new Date(meta.gerado).toLocaleDateString('pt-BR')}${meta.dataBase ? ` (data-base ${meta.dataBase})` : ''}${meta.fontes && meta.fontes.length ? ` a partir de ${meta.fontes.length} arquivo${meta.fontes.length > 1 ? 's' : ''}` : ''}. Para usar uma base própria, arraste os arquivos acima.`;
+}
+async function loadPublishedBase() {
+  if (location.protocol === 'file:') return false;
+  let head; try { head = await fetch(PUB_FILE, { method: 'HEAD', cache: 'no-cache' }); } catch (_) { return false; }
+  if (!head.ok) return false;
+  const tag = head.headers.get('etag') || `${head.headers.get('last-modified') || ''}|${head.headers.get('content-length') || ''}`;
+  const st = $('#statusTxt'); st.textContent = 'Carregando a base publicada…';
+  try {
+    let gz = null; try { const c = await IDB.get('pub'); if (c && c.tag === tag && c.gz) gz = c.gz; } catch (_) {}
+    if (!gz) {
+      const r = await fetch(PUB_FILE, { cache: 'no-cache' }); if (!r.ok) throw new Error('HTTP ' + r.status);
+      const total = +r.headers.get('content-length') || 0, rd = r.body.getReader(), parts = []; let got = 0;
+      for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; st.textContent = `Carregando a base publicada… ${total ? Math.min(99, Math.round(got / total * 100)) + '%' : (got / 1048576).toFixed(1).replace('.', ',') + ' MB'}`; }
+      gz = concatU8(parts, got);
+      try { await IDB.put('pub', { tag, gz }); } catch (_) {}
+    }
+    applyPub(unpackSections(await gunzipU8(gz)));
+    return true;
+  } catch (e) { st.textContent = 'Não foi possível abrir a base publicada no site. Carregue os arquivos manualmente.'; return false; }
+}
+$('#exportPub').onclick = async () => {
+  const out = $('#pubOut'); out.hidden = false; out.className = 'note'; out.textContent = 'Gerando o arquivo…'; await sleep(30);
+  try {
+    const blob = await buildPubFile(), mb = blob.size / 1048576, mbs = mb.toFixed(1).replace('.', ',');
+    downloadBlob(PUB_FILE, blob);
+    out.innerHTML = `<b>${PUB_FILE}</b> gerado (${mbs} MB, ${fmtN(S.P.n)} pontos). Para publicar, coloque este arquivo na raiz do repositório do site, ao lado do index.html, com exatamente este nome.
+      ${mb <= 25 ? 'Pelo próprio site do GitHub: no repositório, <i>Add file → Upload files</i>, arraste o arquivo e confirme em <i>Commit changes</i>.' : 'O arquivo passa de 25 MB, limite do envio pelo site do GitHub: use o GitHub Desktop ou a linha de comando (limite de 100 MB).'}
+      Em um ou dois minutos, quem abrir o site já recebe a base pronta.`;
+  } catch (e) { out.className = 'note err'; out.textContent = `Não consegui gerar o arquivo: ${e.message}. Use um navegador atualizado (Chrome, Edge ou Firefox).`; }
 };
 
 /* ================= cache no navegador ================= */
@@ -1924,6 +1734,7 @@ async function restoreCache() {
   } catch (_) {}
 })();
 
+loadPublishedBase();
 ['#pInj', '#pT1', '#pT2', '#pT3'].forEach(id => $(id).addEventListener('change', invParamsChanged));
 $('#pReset').onclick = () => { INV.p = { ...INV.def }; try { localStorage.removeItem('alim-inv-p'); } catch (_) {} invRenderCfg(); invRefresh(); };
 if (INV_EMB) invLoad(INV_EMB, 'Planilha embutida (Celesc_inversao_de_fluxo.xlsx)');

@@ -1,18 +1,24 @@
 # Localizador de Alimentadores SC
 
-Página única (`index.html`) que estima qual alimentador e qual subestação da Celesc atendem um endereço, uma coordenada ou uma unidade consumidora em Santa Catarina. Depois de identificar o alimentador, a página mostra a **situação estimada de inversão de fluxo** segundo a planilha `Celesc_inversao_de_fluxo.xlsx`.
+Página única (`index.html`) que estima qual alimentador e qual subestação da Celesc atendem um endereço, uma coordenada, uma rua ou um CEP em Santa Catarina. Depois de identificar o alimentador, a página mostra a **situação estimada de inversão de fluxo** segundo a planilha `Celesc_inversao_de_fluxo.xlsx`.
 
-Tudo roda no navegador. Os arquivos da ANEEL são lidos no computador de quem usa e não são enviados para nenhum servidor.
+Tudo roda no navegador. Quando o arquivo `base-sc.bin.gz` está publicado ao lado da página, ela já abre com a base pronta para todos os visitantes.
 
 ## Como usar
 
-1. Abra `index.html` no Chrome ou no Edge (direto do disco ou pelo endereço publicado).
-2. Arraste para a página os dados públicos da ANEEL:
-   - `UCMT_PJ.csv` e `UCBT_PJ.zip` (unidades consumidoras de empresas, com alimentador e coordenadas), no [portal de dados abertos da ANEEL](https://dadosabertos.aneel.gov.br/dataset/base-de-dados-geografica-da-distribuidora-bdgd);
-   - a pasta `.gdb` da BDGD da Celesc, do [repositório da ANEEL](https://dadosabertos-aneel.opendata.arcgis.com/search?tags=distribuicao). A página reconhece sozinha as tabelas de medidores (EQME), unidades consumidoras (UCBT_tab, UCMT_tab), alimentadores (CTMT), subestações (SUB) e transformadores (UNTRMT).
-3. Consulte por endereço, coordenada, link do Google Maps, rua ou CEP, município, lista em lote ou número da UC ou do medidor.
+Abra o site e consulte pela aba **Ponto** (endereço, coordenada, link do Google Maps ou clique no mapa) ou pela aba **Rua ou CEP**.
 
-A base carregada fica guardada no navegador para a próxima visita.
+## Como publicar ou atualizar a base fixa
+
+1. Abra o site (ou `index.html` direto do disco) no Chrome ou no Edge.
+2. Arraste para a caixa de arquivos os dados públicos da ANEEL:
+   - `UCMT_PJ.csv`, `UCBT_PJ.zip` e `UCAT_PJ.csv` (unidades consumidoras de empresas, com alimentador e coordenadas), do [portal de dados abertos da ANEEL](https://dadosabertos.aneel.gov.br/dataset/base-de-dados-geografica-da-distribuidora-bdgd);
+   - a pasta `.gdb` da BDGD da Celesc, do [repositório da ANEEL](https://dadosabertos-aneel.opendata.arcgis.com/search?tags=distribuicao). A página aproveita os transformadores (UNTRMT), os nomes dos alimentadores (CTMT) e os das subestações (SUB).
+3. Quando terminar de carregar, clique em **Gerar arquivo para publicar no site**. O navegador baixa `base-sc.bin.gz`.
+4. No GitHub, abra o repositório, clique em **Add file → Upload files**, arraste `base-sc.bin.gz` e confirme em **Commit changes**. O envio pelo site do GitHub aceita arquivos de até 25 MB; acima disso, use o GitHub Desktop.
+5. Em um ou dois minutos o GitHub Pages atualiza. Quem abrir o site recebe a base nova; quem já tinha a anterior baixa a nova automaticamente.
+
+Para trocar a base, repita os passos e envie o arquivo novo com o mesmo nome.
 
 ## Inversão de fluxo
 
@@ -36,6 +42,7 @@ Para atualizar a planilha:
 | Caminho | Conteúdo |
 | --- | --- |
 | `index.html` | Página pronta para publicar (gerada; não editar à mão) |
+| `base-sc.bin.gz` | Base fixa de SC carregada automaticamente pela página (gerada pelo botão da página) |
 | `src/alimentadores.src.html` | Código-fonte da página |
 | `src/build.py` | Gera `index.html` embutindo os dados abaixo |
 | `src/data/sc-municipios.json` | Municípios de SC (código IBGE, nome, centro) |
@@ -46,6 +53,10 @@ Para atualizar a planilha:
 ## Hospedagem
 
 `index.html` é um arquivo estático e pode ser servido por qualquer hospedagem de site estático, como GitHub Pages, Netlify ou Vercel. No Supabase, páginas HTML só são exibidas como página com domínio próprio configurado; no endereço padrão `*.supabase.co`, o HTML é entregue como texto.
+
+## Licença dos dados
+
+Os dados de origem são da ANEEL e publicados sob a licença [ODbL](https://opendatacommons.org/licenses/odbl/). A base derivada (`base-sc.bin.gz`) segue a mesma licença, com crédito à ANEEL.
 
 ## Limitações
 
