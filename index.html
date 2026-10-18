@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-edition="v1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,7 +8,7 @@
 <meta name="description" content="Estima o alimentador de média tensão que atende um endereço ou coordenada em Santa Catarina, a partir da BDGD publicada pela ANEEL.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@600;700&display=swap">
 <style>
 /* Leaflet 1.9.4 (BSD-2) */ .leaflet-pane, .leaflet-tile, .leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-tile-container, .leaflet-pane > svg, .leaflet-pane > canvas, .leaflet-zoom-box, .leaflet-image-layer, .leaflet-layer { position: absolute; left: 0; top: 0; } .leaflet-container { overflow: hidden; } .leaflet-tile, .leaflet-marker-icon, .leaflet-marker-shadow { -webkit-user-select: none; -moz-user-select: none; user-select: none; -webkit-user-drag: none; } .leaflet-tile::selection { background: transparent; } .leaflet-safari .leaflet-tile { image-rendering: -webkit-optimize-contrast; } .leaflet-safari .leaflet-tile-container { width: 1600px; height: 1600px; -webkit-transform-origin: 0 0; } .leaflet-marker-icon, .leaflet-marker-shadow { display: block; } .leaflet-container .leaflet-overlay-pane svg { max-width: none !important; max-height: none !important; } .leaflet-container .leaflet-marker-pane img, .leaflet-container .leaflet-shadow-pane img, .leaflet-container .leaflet-tile-pane img, .leaflet-container img.leaflet-image-layer, .leaflet-container .leaflet-tile { max-width: none !important; max-height: none !important; width: auto; padding: 0; } .leaflet-container img.leaflet-tile { mix-blend-mode: plus-lighter; } .leaflet-container.leaflet-touch-zoom { -ms-touch-action: pan-x pan-y; touch-action: pan-x pan-y; } .leaflet-container.leaflet-touch-drag { -ms-touch-action: pinch-zoom; touch-action: none; touch-action: pinch-zoom; } .leaflet-container.leaflet-touch-drag.leaflet-touch-zoom { -ms-touch-action: none; touch-action: none; } .leaflet-container { -webkit-tap-highlight-color: transparent; } .leaflet-container a { -webkit-tap-highlight-color: rgba(51, 181, 229, 0.4); } .leaflet-tile { filter: inherit; visibility: hidden; } .leaflet-tile-loaded { visibility: inherit; } .leaflet-zoom-box { width: 0; height: 0; -moz-box-sizing: border-box; box-sizing: border-box; z-index: 800; } .leaflet-overlay-pane svg { -moz-user-select: none; } .leaflet-pane { z-index: 400; } .leaflet-tile-pane { z-index: 200; } .leaflet-overlay-pane { z-index: 400; } .leaflet-shadow-pane { z-index: 500; } .leaflet-marker-pane { z-index: 600; } .leaflet-tooltip-pane { z-index: 650; } .leaflet-popup-pane { z-index: 700; } .leaflet-map-pane canvas { z-index: 100; } .leaflet-map-pane svg { z-index: 200; } .leaflet-vml-shape { width: 1px; height: 1px; } .leaflet-control { position: relative; z-index: 800; pointer-events: visiblePainted; pointer-events: auto; } .leaflet-top, .leaflet-bottom { position: absolute; z-index: 1000; pointer-events: none; } .leaflet-top { top: 0; } .leaflet-right { right: 0; } .leaflet-bottom { bottom: 0; } .leaflet-left { left: 0; } .leaflet-control { float: left; clear: both; } .leaflet-right .leaflet-control { float: right; } .leaflet-top .leaflet-control { margin-top: 10px; } .leaflet-bottom .leaflet-control { margin-bottom: 10px; } .leaflet-left .leaflet-control { margin-left: 10px; } .leaflet-right .leaflet-control { margin-right: 10px; } .leaflet-fade-anim .leaflet-popup { opacity: 0; -webkit-transition: opacity 0.2s linear; -moz-transition: opacity 0.2s linear; transition: opacity 0.2s linear; } .leaflet-fade-anim .leaflet-map-pane .leaflet-popup { opacity: 1; } .leaflet-zoom-animated { -webkit-transform-origin: 0 0; -ms-transform-origin: 0 0; transform-origin: 0 0; } svg.leaflet-zoom-animated { will-change: transform; } .leaflet-zoom-anim .leaflet-zoom-animated { -webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1); -moz-transition: -moz-transform 0.25s cubic-bezier(0,0,0.25,1); transition: transform 0.25s cubic-bezier(0,0,0.25,1); } .leaflet-zoom-anim .leaflet-tile, .leaflet-pan-anim .leaflet-tile { -webkit-transition: none; -moz-transition: none; transition: none; } .leaflet-zoom-anim .leaflet-zoom-hide { visibility: hidden; } .leaflet-interactive { cursor: pointer; } .leaflet-grab { cursor: -webkit-grab; cursor: -moz-grab; cursor: grab; } .leaflet-crosshair, .leaflet-crosshair .leaflet-interactive { cursor: crosshair; } .leaflet-popup-pane, .leaflet-control { cursor: auto; } .leaflet-dragging .leaflet-grab, .leaflet-dragging .leaflet-grab .leaflet-interactive, .leaflet-dragging .leaflet-marker-draggable { cursor: move; cursor: -webkit-grabbing; cursor: -moz-grabbing; cursor: grabbing; } .leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-image-layer, .leaflet-pane > svg path, .leaflet-tile-container { pointer-events: none; } .leaflet-marker-icon.leaflet-interactive, .leaflet-image-layer.leaflet-interactive, .leaflet-pane > svg path.leaflet-interactive, svg.leaflet-image-layer.leaflet-interactive path { pointer-events: visiblePainted; pointer-events: auto; } .leaflet-container { background: #ddd; outline-offset: 1px; } .leaflet-container a { color: #0078A8; } .leaflet-zoom-box { border: 2px dotted #38f; background: rgba(255,255,255,0.5); } .leaflet-container { font-family: "Helvetica Neue", Arial, Helvetica, sans-serif; font-size: 12px; font-size: 0.75rem; line-height: 1.5; } .leaflet-bar { box-shadow: 0 1px 5px rgba(0,0,0,0.65); border-radius: 4px; } .leaflet-bar a { background-color: #fff; border-bottom: 1px solid #ccc; width: 26px; height: 26px; line-height: 26px; display: block; text-align: center; text-decoration: none; color: black; } .leaflet-bar a, .leaflet-control-layers-toggle { background-position: 50% 50%; background-repeat: no-repeat; display: block; } .leaflet-bar a:hover, .leaflet-bar a:focus { background-color: #f4f4f4; } .leaflet-bar a:first-child { border-top-left-radius: 4px; border-top-right-radius: 4px; } .leaflet-bar a:last-child { border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; border-bottom: none; } .leaflet-bar a.leaflet-disabled { cursor: default; background-color: #f4f4f4; color: #bbb; } .leaflet-touch .leaflet-bar a { width: 30px; height: 30px; line-height: 30px; } .leaflet-touch .leaflet-bar a:first-child { border-top-left-radius: 2px; border-top-right-radius: 2px; } .leaflet-touch .leaflet-bar a:last-child { border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; } .leaflet-control-zoom-in, .leaflet-control-zoom-out { font: bold 18px 'Lucida Console', Monaco, monospace; text-indent: 1px; } .leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out { font-size: 22px; } .leaflet-control-layers { box-shadow: 0 1px 5px rgba(0,0,0,0.4); background: #fff; border-radius: 5px; } .leaflet-touch .leaflet-control-layers-toggle { width: 44px; height: 44px; } .leaflet-control-layers .leaflet-control-layers-list, .leaflet-control-layers-expanded .leaflet-control-layers-toggle { display: none; } .leaflet-control-layers-expanded .leaflet-control-layers-list { display: block; position: relative; } .leaflet-control-layers-expanded { padding: 6px 10px 6px 6px; color: #333; background: #fff; } .leaflet-control-layers-scrollbar { overflow-y: scroll; overflow-x: hidden; padding-right: 5px; } .leaflet-control-layers-selector { margin-top: 2px; position: relative; top: 1px; } .leaflet-control-layers label { display: block; font-size: 13px; font-size: 1.08333em; } .leaflet-control-layers-separator { height: 0; border-top: 1px solid #ddd; margin: 5px -10px 5px -6px; } .leaflet-container .leaflet-control-attribution { background: #fff; background: rgba(255, 255, 255, 0.8); margin: 0; } .leaflet-control-attribution, .leaflet-control-scale-line { padding: 0 5px; color: #333; line-height: 1.4; } .leaflet-control-attribution a { text-decoration: none; } .leaflet-control-attribution a:hover, .leaflet-control-attribution a:focus { text-decoration: underline; } .leaflet-attribution-flag { display: inline !important; vertical-align: baseline !important; width: 1em; height: 0.6669em; } .leaflet-left .leaflet-control-scale { margin-left: 5px; } .leaflet-bottom .leaflet-control-scale { margin-bottom: 5px; } .leaflet-control-scale-line { border: 2px solid #777; border-top: none; line-height: 1.1; padding: 2px 5px 1px; white-space: nowrap; -moz-box-sizing: border-box; box-sizing: border-box; background: rgba(255, 255, 255, 0.8); text-shadow: 1px 1px #fff; } .leaflet-control-scale-line:not(:first-child) { border-top: 2px solid #777; border-bottom: none; margin-top: -2px; } .leaflet-control-scale-line:not(:first-child):not(:last-child) { border-bottom: 2px solid #777; } .leaflet-touch .leaflet-control-attribution, .leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar { box-shadow: none; } .leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar { border: 2px solid rgba(0,0,0,0.2); background-clip: padding-box; } .leaflet-popup { position: absolute; text-align: center; margin-bottom: 20px; } .leaflet-popup-content-wrapper { padding: 1px; text-align: left; border-radius: 12px; } .leaflet-popup-content { margin: 13px 24px 13px 20px; line-height: 1.3; font-size: 13px; font-size: 1.08333em; min-height: 1px; } .leaflet-popup-content p { margin: 17px 0; margin: 1.3em 0; } .leaflet-popup-tip-container { width: 40px; height: 20px; position: absolute; left: 50%; margin-top: -1px; margin-left: -20px; overflow: hidden; pointer-events: none; } .leaflet-popup-tip { width: 17px; height: 17px; padding: 1px; margin: -10px auto 0; pointer-events: auto; -webkit-transform: rotate(45deg); -moz-transform: rotate(45deg); -ms-transform: rotate(45deg); transform: rotate(45deg); } .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: white; color: #333; box-shadow: 0 3px 14px rgba(0,0,0,0.4); } .leaflet-container a.leaflet-popup-close-button { position: absolute; top: 0; right: 0; border: none; text-align: center; width: 24px; height: 24px; font: 16px/24px Tahoma, Verdana, sans-serif; color: #757575; text-decoration: none; background: transparent; } .leaflet-container a.leaflet-popup-close-button:hover, .leaflet-container a.leaflet-popup-close-button:focus { color: #585858; } .leaflet-popup-scrolled { overflow: auto; } .leaflet-oldie .leaflet-popup-content-wrapper { -ms-zoom: 1; } .leaflet-oldie .leaflet-popup-tip { width: 24px; margin: 0 auto; -ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)"; filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678); } .leaflet-oldie .leaflet-control-zoom, .leaflet-oldie .leaflet-control-layers, .leaflet-oldie .leaflet-popup-content-wrapper, .leaflet-oldie .leaflet-popup-tip { border: 1px solid #999; } .leaflet-div-icon { background: #fff; border: 1px solid #666; } .leaflet-tooltip { position: absolute; padding: 6px; background-color: #fff; border: 1px solid #fff; border-radius: 3px; color: #222; white-space: nowrap; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; pointer-events: none; box-shadow: 0 1px 3px rgba(0,0,0,0.4); } .leaflet-tooltip.leaflet-interactive { cursor: pointer; pointer-events: auto; } .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before { position: absolute; pointer-events: none; border: 6px solid transparent; background: transparent; content: ""; } .leaflet-tooltip-bottom { margin-top: 6px; } .leaflet-tooltip-top { margin-top: -6px; } .leaflet-tooltip-bottom:before, .leaflet-tooltip-top:before { left: 50%; margin-left: -6px; } .leaflet-tooltip-top:before { bottom: 0; margin-bottom: -12px; border-top-color: #fff; } .leaflet-tooltip-bottom:before { top: 0; margin-top: -12px; margin-left: -6px; border-bottom-color: #fff; } .leaflet-tooltip-left { margin-left: -6px; } .leaflet-tooltip-right { margin-left: 6px; } .leaflet-tooltip-left:before, .leaflet-tooltip-right:before { top: 50%; margin-top: -6px; } .leaflet-tooltip-left:before { right: 0; margin-right: -12px; border-left-color: #fff; } .leaflet-tooltip-right:before { left: 0; margin-left: -12px; border-right-color: #fff; } @media print { .leaflet-control { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style>
@@ -226,6 +226,34 @@ tbody tr.clk:hover{background:var(--surface-2)}
 .pop dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:6px 0}
 .pop dt{color:var(--ink-2)} .pop dd{margin:0;overflow-wrap:anywhere}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+/* ===== Edição 2.0 · Verificador de Rede Celesc/Solturi: cores do logotipo (laranja → azul) ===== */
+:root{ --brand-o:#D56A1C; --brand-b:#1A50A8; --brand-m:#705A5C; --brand-b-ink:#FFFFFF; --f-brand:"Sora","Barlow Semi Condensed",system-ui,sans-serif; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --brand-o:#EC8A43; --brand-b:#6B95E3; --brand-m:#9C8486; --brand-b-ink:#0F1412; } }
+:root[data-theme="dark"]{ --brand-o:#EC8A43; --brand-b:#6B95E3; --brand-m:#9C8486; --brand-b-ink:#0F1412; }
+html[data-edition="v2"] body{ --accent:var(--brand-o); --btn:var(--brand-b); --btn-ink:var(--brand-b-ink); }
+html[data-edition="v2"] .top{background:linear-gradient(100deg,#C9611A 0%,#6E5A62 52%,#1A4E9F 100%);border-bottom:0;color:#fff}
+html[data-edition="v2"] .top h1{font-family:var(--f-brand);font-weight:700;font-size:21px;letter-spacing:0;color:#fff}
+html[data-edition="v2"] .top .brand p{color:rgba(255,255,255,.86)}
+html[data-edition="v2"] .top .status{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff}
+html[data-edition="v2"] .top .status.on i{background:#7CF07C}
+html[data-edition="v2"] .brand-logo{width:44px;height:44px;border-radius:11px;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.55)}
+html[data-edition="v2"] .tabs button{font-family:var(--f-brand);font-size:14.5px}
+html[data-edition="v2"]:not(.admin) #dataCard{display:none!important}
+.stcard{border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);background:var(--surface-2)}
+.stcard.good{background:color-mix(in srgb,var(--good) 11%,var(--surface));border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
+.stcard.warn{background:color-mix(in srgb,var(--warn) 15%,var(--surface));border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
+.stcard.serious{background:color-mix(in srgb,var(--serious) 14%,var(--surface));border-color:color-mix(in srgb,var(--serious) 55%,var(--line))}
+.stcard.crit{background:color-mix(in srgb,var(--crit) 11%,var(--surface));border-color:color-mix(in srgb,var(--crit) 50%,var(--line))}
+.st-label{display:flex;align-items:center;gap:12px;font-family:var(--f-brand);font-weight:700;font-size:clamp(23px,4.4vw,30px);line-height:1.15;text-wrap:balance}
+.st-label i{width:18px;height:18px;border-radius:50%;flex:none;background:var(--ink-3)}
+.stcard.good .st-label i{background:var(--good)} .stcard.warn .st-label i{background:var(--warn)} .stcard.serious .st-label i{background:var(--serious)} .stcard.crit .st-label i{background:var(--crit)}
+.st-mean{margin:0;font-size:14.5px;max-width:58ch}
+.st-ref{font-size:12.5px;color:var(--ink-2)}
+.sug{border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;border:1.5px solid var(--brand-b);background:color-mix(in srgb,var(--brand-b) 8%,var(--surface))}
+.sug-h{display:flex;align-items:center;gap:8px}
+.sug-h svg{flex:none}
+.sug-t{margin:0;font-family:var(--f-brand);font-weight:700;font-size:18px;line-height:1.3}
+.b75{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--brand-b);color:var(--ink);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -330,6 +358,7 @@ for lyr in ["CTMT", "SUB"]:
           </div>
           <p class="hint">Também dá para clicar no mapa. Arraste o marcador para corrigir a posição; o resultado se atualiza na hora.</p>
         </form>
+        <div class="note warn" id="baseMissing" hidden>A base de dados da rede não carregou. Recarregue a página; se continuar, avise o responsável pela ferramenta.</div>
         <div id="geoBox" class="cands"></div>
         <div id="pointResult"></div>
       </div>
@@ -367,6 +396,16 @@ for lyr in ["CTMT", "SUB"]:
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
 <script>
 'use strict';
+const V2 = document.documentElement.dataset.edition === 'v2';
+const isAdmin = () => /(^|[#&?])admin\b/.test(location.hash + location.search);
+document.documentElement.classList.toggle('admin', isAdmin());
+window.addEventListener('hashchange', () => { document.documentElement.classList.toggle('admin', isAdmin()); if (V2) try { updateStatus(); } catch (_) {} });
+const MES = { JAN: 1, FEB: 2, FEV: 2, MAR: 3, APR: 4, ABR: 4, MAY: 5, MAI: 5, JUN: 6, JUL: 7, AUG: 8, AGO: 8, SEP: 9, SET: 9, OCT: 10, OUT: 10, NOV: 11, DEC: 12, DEZ: 12 };
+function fmtDB(v) {
+  v = String(v || '').trim(); let m = v.match(/^(\d{1,2})([A-Za-z]{3})(\d{4})/);
+  if (m && MES[m[2].toUpperCase()]) return `${m[1].padStart(2, '0')}/${String(MES[m[2].toUpperCase()]).padStart(2, '0')}/${m[3]}`;
+  m = v.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : v;
+}
 /* ================= utilidades ================= */
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -975,7 +1014,7 @@ function invKeys(code, name) {
 function invLoad(data, src) {
   INV.def = { inj: +data.params.inj || 0.75, t1: +data.params.t1 || 1, t2: +data.params.t2 || 0.8, t3: +data.params.t3 || 0.5 };
   INV.p = { ...INV.def };
-  try { const sv = JSON.parse(localStorage.getItem('alim-inv-p') || 'null'); if (sv && isFinite(sv.inj)) INV.p = { ...INV.def, ...sv }; } catch (_) {}
+  if (!V2) try { const sv = JSON.parse(localStorage.getItem('alim-inv-p') || 'null'); if (sv && isFinite(sv.inj)) INV.p = { ...INV.def, ...sv }; } catch (_) {}
   INV.rows = data.feeders.filter(r => r && r[0]).map(r => ({ code: String(r[0]).trim(), name: r[1] || '', sub: r[2] || '', mun: r[3] || '', norte: r[4] || '', trSE: r[5] || '', ucs: numv(r[6]), H: numv(r[7]), mes: r[8] || '', cmed: numv(r[9]), qGD: numv(r[10]), L: numv(r[11]), N: numv(r[12]), O: r[13] || '', P: numv(r[14]), rev: numv(r[15]), mrev: numv(r[16]) }));
   INV.se = new Map((data.ses || []).filter(r => r && r[0]).map(r => [String(r[0]).trim(), { id: r[0], sub: r[1], mun: r[2], sit: r[4] || '', mva: numv(r[5]), eN: numv(r[6]), eR: numv(r[7]), meses: numv(r[8]), frac: numv(r[9]) }]));
   INV.keys = new Map(); for (const r of INV.rows) for (const k of invKeys(r.code, r.name)) if (!INV.keys.has(k)) INV.keys.set(k, r);
@@ -1039,7 +1078,7 @@ function invBox(ci) {
 }
 function invRenderCfg() {
   const box = $('#invCfg'); if (!box) return;
-  box.hidden = !INV.rows.length;
+  box.hidden = !INV.rows.length || V2;
   $('#invSrc').textContent = `${INV.src}: ${fmtN(INV.rows.length)} alimentadores e ${fmtN(INV.se.size)} transformadores de subestação.`;
   $('#pInj').value = INV.p.inj; $('#pT1').value = INV.p.t1; $('#pT2').value = INV.p.t2; $('#pT3').value = INV.p.t3;
   $('#pReset').disabled = ['inj', 't1', 't2', 't3'].every(k => INV.p[k] === INV.def[k]);
@@ -1146,8 +1185,9 @@ function updateStatus() {
   if (n.uc) parts.push(`${fmtN(n.uc)} UCs`); if (n.tr) parts.push(`${fmtN(n.tr)} trafos`); if (n.net) parts.push(`${fmtN(n.net)} vértices de rede`);
   if (S.U.n) parts.push(`${fmtN(S.U.n)} medidores`);
   if (S.D.ctmt.arr.length > 1) parts.push(`${fmtN(S.D.ctmt.arr.length - 1)} alimentadores`);
-  if (S.dataBase) parts.push(`data-base ${S.dataBase}`);
+  if (S.dataBase) parts.push(`data-base ${fmtDB(S.dataBase)}`);
   t.textContent = (S.demo ? 'DEMONSTRAÇÃO, dados fictícios · ' : S.fromPub ? 'Base do site · ' : '') + parts.join(' · ');
+  if (V2 && !isAdmin()) t.textContent = S.demo ? 'Demonstração com dados fictícios' : `Rede Celesc pronta${S.dataBase ? ` · base de ${fmtDB(S.dataBase)}` : ''}`;
 }
 function renderDistBox() {
   const box = $('#distBox'); const P = S.P, cnt = new Map();
@@ -1174,7 +1214,7 @@ function fillMunSelects() {
 /* ================= mapa ================= */
 let map = null, layer = null, qMarker = null, refLayer = null, tiles = null;
 const isDark = () => { const t = document.documentElement.dataset.theme; return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches); };
-function token(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function token(n) { return getComputedStyle(document.body || document.documentElement).getPropertyValue(n).trim(); }
 const SLOT_VAR = ['', '--s1', '--s2', '--s3'];
 if (window.L) {
   map = L.map('map', { zoomControl: true, preferCanvas: true, worldCopyJump: false }).setView([-27.25, -50.45], 7);
@@ -1263,7 +1303,7 @@ function popupHtml(i) {
   if (c.tr[i]) rows.push([k === 5 ? 'Código do trafo' : 'Trafo (UNI_TR_MT)', S.D.tr.get(c.tr[i])]);
   if (c.dist[i]) rows.push(['Distribuidora', distLabel(c.dist[i])]);
   return `<div class="pop"><div class="tiny muted">${esc(KIND[k])}</div><b class="mono">${esc(feederLabel(c.ctmt[i]))}</b>${fc ? ` <span class="tiny muted mono">${esc(fc)}</span>` : ''}
-    <dl>${rows.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}${!S.demo && invFor(c.ctmt[i]) ? `<dt>Inversão de fluxo</dt><dd>${invTag(c.ctmt[i])}</dd>` : ''}</dl>
+    <dl>${rows.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}${!S.demo && invFor(c.ctmt[i]) ? `<dt>${V2 ? 'Status da rede' : 'Inversão de fluxo'}</dt><dd>${invTag(c.ctmt[i])}</dd>` : ''}</dl>
     <button class="btn sm" type="button" data-q="${P.y[i].toFixed(6)},${P.x[i].toFixed(6)}">Consultar este ponto</button></div>`;
 }
 function setLayerView(v) {
@@ -1329,7 +1369,63 @@ const ICON = {
   tr: '<svg width="30" height="28" viewBox="0 0 30 28" aria-hidden="true"><circle cx="11" cy="14" r="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/><circle cx="19" cy="14" r="6" fill="none" stroke="var(--ink)" stroke-width="2"/></svg>',
   pt: '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="8" fill="var(--ink)" stroke="var(--accent)" stroke-width="3"/></svg>'
 };
+/* ================= edição 2.0: status da rede e sugestão comercial ================= */
+const R75_MUN = new Set(['JARAGUA DO SUL', 'CORUPA', 'SCHROEDER', 'GUARAMIRIM']);
+const R75_TXT = 'No máximo um inversor de 7,5 kW, sem inclusão de beneficiária.';
+function statusOf(ci) { const r = invFor(ci); if (!r) return null; const c = invCalc(r); return { row: r, c, st: INV_ST[c.T] }; }
+function stMeaning(T) {
+  const p = INV.p, pc = v => fmtD(v * 100) + '%';
+  return ({
+    'Inversão de fluxo provável': 'Ao meio-dia de um domingo de sol, a geração tende a superar o consumo do alimentador.',
+    'No limite': `A geração ao meio-dia fica entre ${pc(p.t2)} e ${pc(p.t1)} do consumo do alimentador.`,
+    'Atenção': `A geração ao meio-dia fica entre ${pc(p.t3)} e ${pc(p.t2)} do consumo do alimentador.`,
+    'Com folga': `A geração ao meio-dia fica abaixo de ${pc(p.t3)} do consumo do alimentador.`,
+    'Dedicado a usina': 'Alimentador dedicado a usinas, sem consumidores ligados.',
+    'Sem carga e sem geração': 'Alimentador sem consumo e sem geração registrados.'
+  })[T] || '';
+}
+function pointMun(r) {
+  const w = new Map(); for (const a of r.all) { const m = S.P.c.mun[a.i]; if (m) w.set(m, (w.get(m) || 0) + a.w); }
+  let best = 0, bw = -1; for (const [m, x] of w) if (x > bw) { bw = x; best = m; } return best;
+}
+function regra75(ci, mi) {
+  const s = statusOf(ci); if (!s) return null;
+  let mname = mi ? munName(mi) : ''; if (!mname || mname === '—') mname = s.row.mun || '';
+  if (!R75_MUN.has(norm(mname))) return null;
+  const why = [];
+  if (s.c.T === 'Inversão de fluxo provável') why.push('o alimentador está com inversão de fluxo provável');
+  if (s.row.mrev > 0) why.push(`o transformador da subestação registrou fluxo reverso em ${fmtN(s.row.mrev)} ${s.row.mrev === 1 ? 'mês' : 'meses'} de 2025`);
+  return why.length ? { mun: mname, why } : null;
+}
+const SUN_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="var(--brand-o)"/><g stroke="var(--brand-o)" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></g></svg>';
+function renderPointV2(q) {
+  const el = $('#pointResult'), r = q.r;
+  if (r.none) { el.innerHTML = '<div class="res"><div class="note warn">Não há dados da rede num raio de 3 km deste ponto. Confira o endereço ou a posição no mapa.</div></div>'; return; }
+  const top = r.top, s = statusOf(top.c), mi = pointMun(r), mname = mi ? munName(mi) : '';
+  const card = s
+    ? `<section class="stcard ${s.st.c}" aria-label="Status da rede no local"><span class="eyebrow">Status da rede no local</span>
+        <div class="st-label"><i></i><span>${esc(s.c.T)}</span></div><p class="st-mean">${esc(stMeaning(s.c.T))}</p>
+        <div class="st-ref mono">Alimentador ${esc(s.row.code)} · ${esc(subLabel(top.c, top.s))}${mname ? ` · ${esc(mname)}` : ''}</div></section>`
+    : `<section class="stcard info" aria-label="Status da rede no local"><span class="eyebrow">Status da rede no local</span>
+        <div class="st-label"><i></i><span>Sem status para este alimentador</span></div>
+        <p class="st-mean">O alimentador ${esc(feederLabel(top.c))} não está na planilha de inversão de fluxo. Pode ser de uma cooperativa ou ter sido criado depois da data-base.</p></section>`;
+  const rg = regra75(top.c, mi);
+  const sug = rg ? `<section class="sug" aria-label="Sugestão comercial"><div class="sug-h">${SUN_ICON}<span class="eyebrow">Sugestão comercial · ${esc(rg.mun)}</span></div>
+      <p class="sug-t">${R75_TXT}</p><p class="small muted" style="margin:0">Motivo: ${esc(rg.why.join(' e '))}.</p></section>` : '';
+  let warn = '';
+  const alt = r.ranks.slice(1).find(o => o.share >= 0.2);
+  if (alt && r.conf !== 'alta') {
+    const sa = statusOf(alt.c);
+    if (!s || !sa || sa.c.T !== s.c.T) warn = `<div class="note warn">Este ponto fica perto da divisa com o alimentador ${esc(feederLabel(alt.c))}${sa ? `, com status “${esc(sa.c.T)}”` : ''}. Confira a posição exata do imóvel no mapa.</div>`;
+  }
+  if (!warn && r.conf === 'baixa') warn = '<div class="note warn">Há poucos dados da rede perto deste ponto. Confira a posição exata do imóvel no mapa.</div>';
+  el.innerHTML = `<div class="res"><div class="res-head"><span class="tiny muted">${esc(q.origin)}</span><span class="tiny muted">localização com confiança ${({ alta: 'alta', media: 'média', baixa: 'baixa' })[r.conf]}</span></div>
+    ${card}${sug}${warn}
+    <p class="tiny muted" style="margin:0">Base pública da ANEEL${S.dataBase ? ` de ${esc(fmtDB(S.dataBase))}` : ''} e planilha de inversão de fluxo.</p></div>`;
+}
+
 function renderPoint(q) {
+  if (V2) return renderPointV2(q);
   const el = $('#pointResult'), r = q.r;
   if (r.none) { el.innerHTML = `<div class="res"><div class="note warn">Nenhum ponto da base num raio de 3 km de ${q.lat.toFixed(5)}, ${q.lon.toFixed(5)}. Confira a posição ou carregue a camada de transformadores (UNTRMT), que cobre também áreas sem empresas.</div></div>`; return; }
   const P = S.P, c = P.c, top = r.top, cf = CONF[r.conf], fc = feederCode(top.c);
@@ -1388,7 +1484,7 @@ function runPointQuery(lat, lon, origin, addr, reveal) {
   if (map) { if (r.none) map.setView([lat, lon], 14); else { const far = r.all[Math.min(r.all.length - 1, 7)].d; map.setView([lat, lon], far < 250 ? 17 : far < 600 ? 16 : far < 1500 ? 15 : 14); } }
   if (!reveal) return;
   const narrow = matchMedia('(max-width: 900px)').matches;
-  if (reveal === 'map' && narrow) toast(r.none ? 'Sem pontos da base por perto' : `${feederLabel(r.top.c)} · ${CONF[r.conf].t.toLowerCase()} (detalhes acima)`);
+  if (reveal === 'map' && narrow) toast(r.none ? 'Sem pontos da base por perto' : V2 ? `${(statusOf(r.top.c) || { c: { T: 'Sem status' } }).c.T} (detalhes acima)` : `${feederLabel(r.top.c)} · ${CONF[r.conf].t.toLowerCase()} (detalhes acima)`);
   else $('#pointResult').scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 }
 function requestText(o) {
@@ -1514,7 +1610,8 @@ function feederChips(g, k = 4, slots) {
   const tot = g.n; const list = topOf(g.fe, 99);
   return '<span class="chips">' + list.slice(0, k).map(([ci, n], j) => {
     const s = slots ? slots.get(ci) : j + 1; const col = s && s <= 3 ? `var(${SLOT_VAR[s]})` : 'var(--pt)';
-    return `<span class="chip"><span class="sw" style="--c:${col}"></span><span class="mono">${esc(feederLabel(ci))}</span><span class="muted">${fmtN(n)} · ${pct(n / tot)}</span></span>`;
+    const extra = V2 ? ` ${invTag(ci) || '<span class="tiny muted">sem status</span>'}${regra75(ci, g.mun) ? ' <span class="b75" title="' + R75_TXT + '">máx. 7,5 kW</span>' : ''}` : '';
+    return `<span class="chip"><span class="sw" style="--c:${col}"></span><span class="mono">${esc(feederLabel(ci))}</span><span class="muted">${fmtN(n)} · ${pct(n / tot)}</span>${extra}</span>`;
   }).join('') + (list.length > k ? `<span class="chip muted">+${list.length - k}</span>` : '') + '</span>';
 }
 function slotsFor(g) { return new Map(topOf(g.fe, 3).map(([ci], j) => [ci, j + 1])); }
@@ -1602,7 +1699,7 @@ $('#clearBase').onclick = async () => {
   $('#restoreBox').hidden = true; toast('Dados removidos deste navegador');
 };
 /* ================= base publicada no site (arquivo base-sc.bin.gz ao lado da página) ================= */
-const PUB_FILE = 'base-sc.bin.gz';
+const PUB_FILE = V2 ? '../base-sc.bin.gz' : 'base-sc.bin.gz';
 const PUB_TYPES = { Uint8Array, Uint16Array, Uint32Array, Int32Array, Float32Array, Float64Array };
 function colPack(arr, n) {
   let max = 0; for (let i = 0; i < n; i++) if (arr[i] > max) max = arr[i];
@@ -1655,7 +1752,7 @@ function applyPub({ meta, secs }) {
   $('#steps').hidden = true; $('#demoRow').hidden = true;
   finalize();
   const po = $('#pubOut'); po.hidden = false; po.className = 'note';
-  po.textContent = `Base publicada no site, gerada em ${new Date(meta.gerado).toLocaleDateString('pt-BR')}${meta.dataBase ? ` (data-base ${meta.dataBase})` : ''}${meta.fontes && meta.fontes.length ? ` a partir de ${meta.fontes.length} arquivo${meta.fontes.length > 1 ? 's' : ''}` : ''}. Para usar uma base própria, arraste os arquivos acima.`;
+  po.textContent = `Base publicada no site, gerada em ${new Date(meta.gerado).toLocaleDateString('pt-BR')}${meta.dataBase ? ` (data-base ${fmtDB(meta.dataBase)})` : ''}${meta.fontes && meta.fontes.length ? ` a partir de ${meta.fontes.length} arquivo${meta.fontes.length > 1 ? 's' : ''}` : ''}. Para usar uma base própria, arraste os arquivos acima.`;
 }
 async function loadPublishedBase() {
   if (location.protocol === 'file:') return false;
@@ -1725,6 +1822,7 @@ async function restoreCache() {
     const t = localStorage.getItem('alim-tab'); if (t && $('#tp-' + t)) selectTab(t);
   } catch (_) {}
   try {
+    if (V2 && !isAdmin()) return;
     const m = await IDB.get('meta'); if (!m) return;
     const box = $('#restoreBox'); box.hidden = false;
     box.innerHTML = `Há uma base guardada neste navegador: ${[m.uc ? `${fmtN(m.uc)} UCs` : '', m.tr ? `${fmtN(m.tr)} trafos` : '', m.me ? `${fmtN(m.me)} medidores` : ''].filter(Boolean).join(', ')}${m.dataBase ? `, data-base ${esc(m.dataBase)}` : ''}, salva em ${new Date(m.savedAt).toLocaleDateString('pt-BR')}.
@@ -1734,7 +1832,7 @@ async function restoreCache() {
   } catch (_) {}
 })();
 
-loadPublishedBase();
+loadPublishedBase().then(ok => { if (V2 && !ok && !S.ready) $('#baseMissing').hidden = false; });
 ['#pInj', '#pT1', '#pT2', '#pT3'].forEach(id => $(id).addEventListener('change', invParamsChanged));
 $('#pReset').onclick = () => { INV.p = { ...INV.def }; try { localStorage.removeItem('alim-inv-p'); } catch (_) {} invRenderCfg(); invRefresh(); };
 if (INV_EMB) invLoad(INV_EMB, 'Planilha embutida (Celesc_inversao_de_fluxo.xlsx)');

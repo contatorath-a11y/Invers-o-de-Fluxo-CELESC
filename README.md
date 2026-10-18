@@ -8,6 +8,16 @@ Tudo roda no navegador. Quando o arquivo `base-sc.bin.gz` está publicado ao lad
 
 Abra o site e consulte pela aba **Ponto** (endereço, coordenada, link do Google Maps ou clique no mapa) ou pela aba **Rua ou CEP**.
 
+## Versão 2.0 · Verificador de Rede Celesc/Solturi
+
+Edição para o time comercial da Solturi Energia Solar, publicada em `/verificador/` (a versão 1.0 continua no endereço principal). Usa a mesma base fixa (`base-sc.bin.gz`) e a mesma planilha.
+
+- Mostra só o **status da rede** no local (inversão de fluxo provável, no limite, atenção, com folga, dedicado a usina, sem carga), sem os números do cálculo.
+- Avisa quando o ponto fica perto da divisa com outro alimentador de status diferente.
+- **Sugestão comercial** em Jaraguá do Sul, Corupá, Schroeder e Guaramirim: *no máximo um inversor de 7,5 kW, sem inclusão de beneficiária*. Aparece quando o alimentador está com inversão de fluxo provável **ou** quando o transformador da subestação registrou fluxo reverso em algum mês de 2025 (coluna de meses com reverso da planilha). O município é o do local consultado.
+- A caixa de carregamento de dados fica escondida. Para vê-la, abra `/verificador/#admin`.
+- Identidade visual a partir do logotipo da Solturi (`src/assets/`).
+
 ## Como publicar ou atualizar a base fixa
 
 1. Abra o site (ou `index.html` direto do disco) no Chrome ou no Edge.
@@ -41,10 +51,12 @@ Para atualizar a planilha:
 
 | Caminho | Conteúdo |
 | --- | --- |
-| `index.html` | Página pronta para publicar (gerada; não editar à mão) |
+| `index.html` | Versão 1.0 pronta para publicar (gerada; não editar à mão) |
+| `verificador/index.html` | Versão 2.0, Verificador de Rede Celesc/Solturi (gerada; não editar à mão) |
 | `base-sc.bin.gz` | Base fixa de SC carregada automaticamente pela página (gerada pelo botão da página) |
-| `src/alimentadores.src.html` | Código-fonte da página |
-| `src/build.py` | Gera `index.html` embutindo os dados abaixo |
+| `src/alimentadores.src.html` | Código-fonte das duas versões |
+| `src/build.py` | Gera `index.html` e `verificador/index.html` embutindo os dados abaixo |
+| `src/assets/` | Logotipo e ícone da Solturi usados na versão 2.0 |
 | `src/data/sc-municipios.json` | Municípios de SC (código IBGE, nome, centro) |
 | `src/data/inversao-fluxo.json` | Dados extraídos da planilha de inversão de fluxo |
 | `src/planilha_para_json.py` | Converte uma versão nova da planilha para o JSON acima |
