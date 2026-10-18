@@ -49,6 +49,8 @@ for ed, cfg in EDITIONS.items():
               .replace('/*__MUN__*/[]', mun)
               .replace('/*__INV__*/null', invs)
               .replace('{{EDITION}}', ed))
+    # trechos marcados <!--V2-->…<!--/V2--> só existem na 2.0
+    out = re.sub(r'<!--V2-->(.*?)<!--/V2-->', (lambda m: m.group(1)) if ed == 'v2' else '', out, flags=re.S)
     for key in ('TITLE', 'SUBTITLE', 'DESC', 'FOOT'):
         out = out.replace('{{' + key + '}}', html.escape(cfg[key], quote=True))
     out = out.replace('{{BRANDMARK}}', cfg['BRANDMARK']).replace('{{FAVICON}}', cfg['FAVICON'])

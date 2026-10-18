@@ -253,6 +253,17 @@ html[data-edition="v2"]:not(.admin) #dataCard{display:none!important}
 .sug-h{display:flex;align-items:center;gap:8px}
 .sug-h svg{flex:none}
 .sug-t{margin:0;font-family:var(--f-brand);font-weight:700;font-size:18px;line-height:1.3}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}
+.sysctx{border-radius:10px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);display:flex;flex-direction:column;gap:4px;font-size:14px}
+.sysctx .lim{margin-top:4px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--brand-b);background:color-mix(in srgb,var(--brand-b) 8%,var(--surface));font-weight:600}
+.sysframe{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.sysframe iframe{display:block;width:100%;height:min(78vh,820px);border:0}
+.nextstep{border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;border:1.5px dashed var(--brand-o);background:color-mix(in srgb,var(--brand-o) 7%,var(--surface))}
+.nextstep p{margin:0;font-size:14.5px;flex:1 1 220px}
+#t-sys::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--brand-o);margin-left:6px;vertical-align:middle}
+html[data-edition="v2"] .leaflet-control-layers{background:var(--surface);color:var(--ink);border:1px solid var(--line)!important;border-radius:8px;box-shadow:0 1px 5px rgba(0,0,0,.2)!important;font:600 13px/1.5 var(--f-body,system-ui)}
+html[data-edition="v2"] .leaflet-control-layers-expanded{padding:4px 10px 4px 6px}
+html[data-edition="v2"] .leaflet-control-layers label{display:flex;align-items:center;gap:4px;cursor:pointer}
 .b75{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--brand-b);color:var(--ink);white-space:nowrap}
 </style>
 </head>
@@ -347,6 +358,7 @@ for lyr in ["CTMT", "SUB"]:
       <div class="tabs" role="tablist" id="tabs">
         <button role="tab" type="button" aria-selected="true" aria-controls="tp-point" id="t-point" data-tab="point">Ponto</button>
         <button role="tab" type="button" aria-selected="false" aria-controls="tp-street" id="t-street" data-tab="street">Rua ou CEP</button>
+        <!--V2--><button role="tab" type="button" aria-selected="false" aria-controls="tp-sys" id="t-sys" data-tab="sys" hidden>Verificar sistema</button><!--/V2-->
       </div>
 
       <div class="tabpanel" role="tabpanel" id="tp-point" aria-labelledby="t-point">
@@ -379,6 +391,16 @@ for lyr in ["CTMT", "SUB"]:
         </form>
         <div id="streetResult" class="tabpanel"></div>
       </div>
+
+      <!--V2--><div class="tabpanel" role="tabpanel" id="tp-sys" aria-labelledby="t-sys" hidden>
+        <div id="sysCtx" class="sysctx"></div>
+        <div class="tabpanel" style="gap:8px">
+          <span class="eyebrow">Verificador CELESC e COPEL · Solturi</span>
+          <p class="small" style="margin:0">Informe no verificador o sistema que você vai apresentar ao cliente para confirmar se é possível ligar.</p>
+          <div class="row"><a class="btn ghost sm" id="sysOpen" target="_blank" rel="noopener">Abrir em outra aba</a><span class="hint">Use se o verificador não aparecer abaixo.</span></div>
+          <div class="sysframe"><iframe id="sysFrame" title="Verificador CELESC e COPEL · Solturi" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+        </div>
+      </div><!--/V2-->
 
     </section>
     <p class="tiny muted" style="margin:0 2px">{{FOOT}}</p>
@@ -1222,9 +1244,38 @@ if (window.L) {
     if (tiles) map.removeLayer(tiles);
     tiles = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${isDark() ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`, { subdomains: 'abcd', maxZoom: 20, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>' }).addTo(map);
   };
-  setTiles();
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { setTiles(); layer && layer.redraw(); });
-  new MutationObserver(() => { setTiles(); layer && layer.redraw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  const retheme = () => { if (!S.gmap) setTiles(); layer && layer.redraw(); };
+  if (V2) useGoogleMap().then(ok => { if (!ok) setTiles(); }); else setTiles();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  /* Google Maps: a chave da Maps JavaScript API fica em verificador/config.json (restrita ao domínio do site) */
+  async function useGoogleMap() {
+    if (location.protocol === 'file:') return false;
+    let key = '';
+    try { const r = await fetch('config.json', { cache: 'no-cache' }); if (r.ok) key = String((await r.json()).googleMapsKey || '').trim(); } catch (_) {}
+    if (!key) return false;
+    let road = null, sat = null, ctl = null;
+    const fallback = () => {
+      if (!S.gmap) return; S.gmap = false;
+      [road, sat].forEach(l => l && map.hasLayer(l) && map.removeLayer(l)); if (ctl) map.removeControl(ctl);
+      setTiles(); toast('O mapa do Google não abriu; usando o mapa padrão.');
+    };
+    try {
+      await new Promise((ok, err) => {
+        window.__gmReady = ok; window.gm_authFailure = () => { err(new Error('chave recusada')); fallback(); };
+        const sc = document.createElement('script'); sc.async = true; sc.onerror = () => err(new Error('API do Google não carregou'));
+        sc.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&loading=async&callback=__gmReady&language=pt-BR&region=BR`;
+        document.head.appendChild(sc); setTimeout(() => err(new Error('tempo esgotado')), 15000);
+      });
+      await new Promise((ok, err) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/leaflet.gridlayer.googlemutant@0.15.0/dist/Leaflet.GoogleMutant.js'; sc.onload = ok; sc.onerror = () => err(new Error('GoogleMutant não carregou')); document.head.appendChild(sc); });
+      road = L.gridLayer.googleMutant({ type: 'roadmap', maxZoom: 21 }); sat = L.gridLayer.googleMutant({ type: 'hybrid', maxZoom: 21 });
+      S.gmap = true; if (tiles) { map.removeLayer(tiles); tiles = null; }
+      road.addTo(map);
+      ctl = L.control.layers({ 'Mapa': road, 'Satélite': sat }, null, { position: 'topleft', collapsed: false }).addTo(map);
+      return true;
+    } catch (e) { console.warn('Google Maps:', e.message); S.gmap = false; return false; }
+  }
 
   const PointsLayer = L.Layer.extend({
     onAdd(m) {
@@ -1370,8 +1421,16 @@ const ICON = {
   pt: '<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="8" fill="var(--ink)" stroke="var(--accent)" stroke-width="3"/></svg>'
 };
 /* ================= edição 2.0: status da rede e sugestão comercial ================= */
-const R75_MUN = new Set(['JARAGUA DO SUL', 'CORUPA', 'SCHROEDER', 'GUARAMIRIM']);
-const R75_TXT = 'No máximo um inversor de 7,5 kW, sem inclusão de beneficiária.';
+/* Regional da Celesc de Jaraguá do Sul (municípios informados pela Solturi) */
+const REG_JGS = new Set(['JARAGUA DO SUL', 'CORUPA', 'SCHROEDER', 'GUARAMIRIM']);
+const inRegional = m => REG_JGS.has(norm(m));
+const LIM_TXT_REG = 'No máximo um inversor de 7,5 kW, sem inclusão de beneficiária.';
+const LIM_TXT = 'No máximo um inversor de 7,5 kW.';
+const VERIF_URL = 'https://padraocelesc.lovable.app/verificador';
+function gmLinks(lat, lon) {
+  const ll = `${lat.toFixed(6)},${lon.toFixed(6)}`;
+  return `<div class="row"><a class="btn ghost sm" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=${ll}">Abrir no Google Maps</a><a class="btn ghost sm" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&amp;map_action=pano&amp;viewpoint=${ll}">Street View</a></div>`;
+}
 function statusOf(ci) { const r = invFor(ci); if (!r) return null; const c = invCalc(r); return { row: r, c, st: INV_ST[c.T] }; }
 function stMeaning(T) {
   const p = INV.p, pc = v => fmtD(v * 100) + '%';
@@ -1388,20 +1447,39 @@ function pointMun(r) {
   const w = new Map(); for (const a of r.all) { const m = S.P.c.mun[a.i]; if (m) w.set(m, (w.get(m) || 0) + a.w); }
   let best = 0, bw = -1; for (const [m, x] of w) if (x > bw) { bw = x; best = m; } return best;
 }
-function regra75(ci, mi) {
-  const s = statusOf(ci); if (!s) return null;
-  let mname = mi ? munName(mi) : ''; if (!mname || mname === '—') mname = s.row.mun || '';
-  if (!R75_MUN.has(norm(mname))) return null;
-  const why = [];
-  if (s.c.T === 'Inversão de fluxo provável') why.push('o alimentador está com inversão de fluxo provável');
-  if (s.row.mrev > 0) why.push(`o transformador da subestação registrou fluxo reverso em ${fmtN(s.row.mrev)} ${s.row.mrev === 1 ? 'mês' : 'meses'} de 2025`);
-  return why.length ? { mun: mname, why } : null;
+function locMun(ci, mi) {
+  let m = mi ? munName(mi) : '';
+  if (!m || m === '—') { const r = ci ? invFor(ci) : null; m = r && r.mun ? r.mun : ''; }
+  return m;
+}
+/* sempre que o alimentador estiver com inversão de fluxo provável: limite de 7,5 kW (na regional, sem beneficiária) */
+function limite75(ci, mi) {
+  const s = statusOf(ci); if (!s || s.c.T !== 'Inversão de fluxo provável') return null;
+  const mun = locMun(ci, mi), reg = inRegional(mun);
+  return { mun, reg, txt: reg ? LIM_TXT_REG : LIM_TXT };
+}
+/* aba extra: só aparece quando o último local consultado fica fora da regional de Jaraguá do Sul */
+S.ctx = null;
+function setCtx(c) { S.ctx = c; updateSysTab(); }
+function updateSysTab() {
+  if (!V2) return;
+  const c = S.ctx, show = !!(c && c.mun && !inRegional(c.mun));
+  $('#t-sys').hidden = !show;
+  if (!show) { if (activeTab === 'sys') selectTab('point'); return; }
+  const st = c.ci ? statusOf(c.ci) : null, lim = c.ci ? limite75(c.ci, c.mi) : null;
+  $('#sysCtx').innerHTML = `<span class="eyebrow">Local consultado</span>
+    <div><b>${esc(c.mun)}</b>${c.origin ? ` · ${esc(c.origin)}` : ''}</div>
+    ${c.ci ? `<div class="small">${st ? `Status da rede: ${invTag(c.ci)} · alimentador <span class="mono">${esc(st.row.code)}</span>` : `Alimentador <span class="mono">${esc(feederLabel(c.ci))}</span>, sem status na planilha`}</div>` : ''}
+    ${lim ? `<div class="lim">Limite para a proposta: ${esc(lim.txt)}</div>` : ''}`;
+}
+function loadSysFrame() {
+  const f = $('#sysFrame'); if (!f.getAttribute('src')) f.setAttribute('src', VERIF_URL);
 }
 const SUN_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="var(--brand-o)"/><g stroke="var(--brand-o)" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></g></svg>';
 function renderPointV2(q) {
   const el = $('#pointResult'), r = q.r;
-  if (r.none) { el.innerHTML = '<div class="res"><div class="note warn">Não há dados da rede num raio de 3 km deste ponto. Confira o endereço ou a posição no mapa.</div></div>'; return; }
-  const top = r.top, s = statusOf(top.c), mi = pointMun(r), mname = mi ? munName(mi) : '';
+  if (r.none) { setCtx(null); el.innerHTML = '<div class="res"><div class="note warn">Não há dados da rede num raio de 3 km deste ponto. Confira o endereço ou a posição no mapa.</div></div>'; return; }
+  const top = r.top, s = statusOf(top.c), mi = pointMun(r), mname = locMun(top.c, mi);
   const card = s
     ? `<section class="stcard ${s.st.c}" aria-label="Status da rede no local"><span class="eyebrow">Status da rede no local</span>
         <div class="st-label"><i></i><span>${esc(s.c.T)}</span></div><p class="st-mean">${esc(stMeaning(s.c.T))}</p>
@@ -1409,9 +1487,11 @@ function renderPointV2(q) {
     : `<section class="stcard info" aria-label="Status da rede no local"><span class="eyebrow">Status da rede no local</span>
         <div class="st-label"><i></i><span>Sem status para este alimentador</span></div>
         <p class="st-mean">O alimentador ${esc(feederLabel(top.c))} não está na planilha de inversão de fluxo. Pode ser de uma cooperativa ou ter sido criado depois da data-base.</p></section>`;
-  const rg = regra75(top.c, mi);
-  const sug = rg ? `<section class="sug" aria-label="Sugestão comercial"><div class="sug-h">${SUN_ICON}<span class="eyebrow">Sugestão comercial · ${esc(rg.mun)}</span></div>
-      <p class="sug-t">${R75_TXT}</p><p class="small muted" style="margin:0">Motivo: ${esc(rg.why.join(' e '))}.</p></section>` : '';
+  const lim = limite75(top.c, mi);
+  const sug = lim ? `<section class="sug" aria-label="Limite para a proposta"><div class="sug-h">${SUN_ICON}<span class="eyebrow">Limite para a proposta${lim.mun ? ` · ${esc(lim.mun)}` : ''}</span></div>
+      <p class="sug-t">${esc(lim.txt)}</p><p class="small muted" style="margin:0">Motivo: o alimentador está com inversão de fluxo provável.</p></section>` : '';
+  const fora = mname && !inRegional(mname);
+  const nxt = fora ? `<div class="nextstep"><p><b>Próximo passo:</b> confira se o sistema que você vai apresentar ao cliente pode ser ligado.</p><button class="btn sm" type="button" data-goto="sys">Verificar sistema</button></div>` : '';
   let warn = '';
   const alt = r.ranks.slice(1).find(o => o.share >= 0.2);
   if (alt && r.conf !== 'alta') {
@@ -1420,8 +1500,9 @@ function renderPointV2(q) {
   }
   if (!warn && r.conf === 'baixa') warn = '<div class="note warn">Há poucos dados da rede perto deste ponto. Confira a posição exata do imóvel no mapa.</div>';
   el.innerHTML = `<div class="res"><div class="res-head"><span class="tiny muted">${esc(q.origin)}</span><span class="tiny muted">localização com confiança ${({ alta: 'alta', media: 'média', baixa: 'baixa' })[r.conf]}</span></div>
-    ${card}${sug}${warn}
+    ${card}${sug}${warn}${gmLinks(q.lat, q.lon)}${nxt}
     <p class="tiny muted" style="margin:0">Base pública da ANEEL${S.dataBase ? ` de ${esc(fmtDB(S.dataBase))}` : ''} e planilha de inversão de fluxo.</p></div>`;
+  setCtx({ mi, mun: mname, ci: top.c, origin: q.addr || `${q.lat.toFixed(5)}, ${q.lon.toFixed(5)}` });
 }
 
 function renderPoint(q) {
@@ -1610,12 +1691,18 @@ function feederChips(g, k = 4, slots) {
   const tot = g.n; const list = topOf(g.fe, 99);
   return '<span class="chips">' + list.slice(0, k).map(([ci, n], j) => {
     const s = slots ? slots.get(ci) : j + 1; const col = s && s <= 3 ? `var(${SLOT_VAR[s]})` : 'var(--pt)';
-    const extra = V2 ? ` ${invTag(ci) || '<span class="tiny muted">sem status</span>'}${regra75(ci, g.mun) ? ' <span class="b75" title="' + R75_TXT + '">máx. 7,5 kW</span>' : ''}` : '';
+    const lim = V2 ? limite75(ci, g.mun) : null;
+    const extra = V2 ? ` ${invTag(ci) || '<span class="tiny muted">sem status</span>'}${lim ? ` <span class="b75" title="${esc(lim.txt)}">máx. 7,5 kW</span>` : ''}` : '';
     return `<span class="chip"><span class="sw" style="--c:${col}"></span><span class="mono">${esc(feederLabel(ci))}</span><span class="muted">${fmtN(n)} · ${pct(n / tot)}</span>${extra}</span>`;
   }).join('') + (list.length > k ? `<span class="chip muted">+${list.length - k}</span>` : '') + '</span>';
 }
 function slotsFor(g) { return new Map(topOf(g.fe, 3).map(([ci], j) => [ci, j + 1])); }
+function ctxFromGroup(g) {
+  if (!V2 || !g) return; const t = topOf(g.fe, 1)[0];
+  setCtx({ mi: g.mun, mun: locMun(t ? t[0] : 0, g.mun), ci: t ? t[0] : 0, origin: S.D.lgrd.get(g.lgrd) || '' });
+}
 function showStreetGroup(g) {
+  ctxFromGroup(g);
   const slots = slotsFor(g);
   setLayerView({ type: 'street', idx: Int32Array.from(g.idx), slots });
   if (refLayer) refLayer.clearLayers();
@@ -1628,6 +1715,7 @@ function doStreetSearch() {
   const q = { mi: +$('#sMun').value || 0, street: $('#sStreet').value, bairro: $('#sBrr').value, cep: $('#sCep').value };
   if (!tokensOf(q.street).length && !tokensOf(q.bairro, false).length && q.cep.replace(/\D/g, '').length < 5) { out.innerHTML = '<p class="nodata">Informe um logradouro, um bairro ou pelo menos os 5 primeiros dígitos do CEP.</p>'; return; }
   streetGroups = streetSearch(q);
+  if (streetGroups.length) ctxFromGroup(streetGroups[0]);
   if (!streetGroups.length) { out.innerHTML = `<div class="note warn">Nada encontrado. Tente só uma parte do nome (ex.: “Getulio”), sem o tipo do logradouro. As planilhas de empresas cobrem apenas ruas com empresas; para as demais, use a aba Ponto.</div>`; return; }
   const total = streetGroups.reduce((a, g) => a + g.n, 0), mult = streetGroups.filter(g => g.fe.size > 1).length;
   const shown = streetGroups.slice(0, 80);
@@ -1640,6 +1728,11 @@ function doStreetSearch() {
     }).join('');
 }
 $('#fStreet').addEventListener('submit', ev => { ev.preventDefault(); doStreetSearch(); });
+if (V2) $('#sysOpen').href = VERIF_URL;
+$('#pointResult').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-goto]'); if (!b) return;
+  selectTab(b.dataset.goto); $('#tabs').scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+});
 $('#streetResult').addEventListener('click', ev => { const b = ev.target.closest('[data-g]'); if (b) showStreetGroup(streetGroups[+b.dataset.g]); });
 
 /* ================= copiar ================= */
@@ -1649,6 +1742,7 @@ document.addEventListener('click', ev => { const b = ev.target.closest('[data-co
 let activeTab = 'point';
 function selectTab(t) {
   activeTab = t;
+  if (t === 'sys') loadSysFrame();
   document.querySelectorAll('#tabs [role=tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   document.querySelectorAll('.tabpanel[role=tabpanel]').forEach(p => p.hidden = p.id !== 'tp-' + t);
   try { localStorage.setItem('alim-tab', t); } catch (_) {}
@@ -1660,7 +1754,7 @@ $('#tabs').addEventListener('click', ev => {
 });
 $('#tabs').addEventListener('keydown', ev => {
   if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
-  const tabs = [...document.querySelectorAll('#tabs [role=tab]')], i = tabs.findIndex(b => b.dataset.tab === activeTab);
+  const tabs = [...document.querySelectorAll('#tabs [role=tab]')].filter(b => !b.hidden), i = tabs.findIndex(b => b.dataset.tab === activeTab);
   const n = tabs[(i + (ev.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); n.click();
 });
 function rerunActive() {
@@ -1819,7 +1913,7 @@ async function restoreCache() {
 }
 (async () => {
   try {
-    const t = localStorage.getItem('alim-tab'); if (t && $('#tp-' + t)) selectTab(t);
+    const t = localStorage.getItem('alim-tab'); if (t && $('#tp-' + t) && !$('#t-' + t).hidden) selectTab(t);
   } catch (_) {}
   try {
     if (V2 && !isAdmin()) return;
