@@ -1209,7 +1209,7 @@ function updateStatus() {
   if (S.D.ctmt.arr.length > 1) parts.push(`${fmtN(S.D.ctmt.arr.length - 1)} alimentadores`);
   if (S.dataBase) parts.push(`data-base ${fmtDB(S.dataBase)}`);
   t.textContent = (S.demo ? 'DEMONSTRAÇÃO, dados fictícios · ' : S.fromPub ? 'Base do site · ' : '') + parts.join(' · ');
-  if (V2 && !isAdmin()) t.textContent = S.demo ? 'Demonstração com dados fictícios' : `Rede Celesc pronta${S.dataBase ? ` · base de ${fmtDB(S.dataBase)}` : ''}`;
+  if (V2 && !isAdmin()) t.textContent = S.demo ? 'Demonstração com dados fictícios' : 'Rede Celesc pronta';
 }
 function renderDistBox() {
   const box = $('#distBox'); const P = S.P, cnt = new Map();
@@ -1501,7 +1501,7 @@ function renderPointV2(q) {
   if (!warn && r.conf === 'baixa') warn = '<div class="note warn">Há poucos dados da rede perto deste ponto. Confira a posição exata do imóvel no mapa.</div>';
   el.innerHTML = `<div class="res"><div class="res-head"><span class="tiny muted">${esc(q.origin)}</span><span class="tiny muted">localização com confiança ${({ alta: 'alta', media: 'média', baixa: 'baixa' })[r.conf]}</span></div>
     ${card}${sug}${warn}${gmLinks(q.lat, q.lon)}${nxt}
-    <p class="tiny muted" style="margin:0">Base pública da ANEEL${S.dataBase ? ` de ${esc(fmtDB(S.dataBase))}` : ''} e planilha de inversão de fluxo.</p></div>`;
+    <p class="tiny muted" style="margin:0">Base pública da ANEEL e planilha de inversão de fluxo.</p></div>`;
   setCtx({ mi, mun: mname, ci: top.c, origin: q.addr || `${q.lat.toFixed(5)}, ${q.lon.toFixed(5)}` });
 }
 
