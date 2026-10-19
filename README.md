@@ -14,7 +14,9 @@ Edição para o time comercial da Solturi Energia Solar, publicada em `/verifica
 
 - Mostra só o **status da rede** no local (inversão de fluxo provável, no limite, atenção, com folga, dedicado a usina, sem carga), sem os números do cálculo.
 - Avisa quando o ponto fica perto da divisa com outro alimentador de status diferente.
-- **Limite para a proposta:** sempre que o alimentador estiver com inversão de fluxo provável, *no máximo um inversor de 7,5 kW*. Na regional de Jaraguá do Sul (Jaraguá do Sul, Corupá, Schroeder e Guaramirim), *sem inclusão de beneficiária*. O município é o do local consultado.
+- **Limite para a proposta** (o município é o do local consultado):
+  - Na regional de Jaraguá do Sul (Jaraguá do Sul, Corupá, Schroeder e Guaramirim): *no máximo um inversor de 7,5 kW, sem inclusão de beneficiária* para todo alimentador que não esteja "Com folga" (inversão de fluxo provável, no limite, atenção, dedicado a usina, sem carga ou sem status).
+  - Nos demais municípios: *no máximo um inversor de 7,5 kW* quando o alimentador estiver com inversão de fluxo provável.
 - **Aba "Verificar sistema":** aparece quando o local consultado fica fora da regional de Jaraguá do Sul. Mostra o local, o status e o limite, e abre o [Verificador CELESC e COPEL](https://padraocelesc.lovable.app/verificador) para conferir se o sistema apresentado ao cliente pode ser ligado. A lista da regional fica na constante `REG_JGS` do código-fonte.
 - **Google Maps:** com uma chave da Maps JavaScript API em `verificador/config.json`, o mapa passa a ser o do Google (Mapa e Satélite). Sem chave, fica o mapa padrão. Os botões "Abrir no Google Maps" e "Street View" funcionam sempre.
 - A caixa de carregamento de dados fica escondida. Para vê-la, abra `/verificador/#admin`.

@@ -1444,11 +1444,17 @@ function locMun(ci, mi) {
   if (!m || m === '—') { const r = ci ? invFor(ci) : null; m = r && r.mun ? r.mun : ''; }
   return m;
 }
-/* sempre que o alimentador estiver com inversão de fluxo provável: limite de 7,5 kW (na regional, sem beneficiária) */
+/* limite de 7,5 kW
+   · regional de Jaraguá do Sul: todo alimentador que não estiver "Com folga" (sem beneficiária)
+   · demais municípios: só com inversão de fluxo provável */
 function limite75(ci, mi) {
-  const s = statusOf(ci); if (!s || s.c.T !== 'Inversão de fluxo provável') return null;
-  const mun = locMun(ci, mi), reg = inRegional(mun);
-  return { mun, reg, txt: reg ? LIM_TXT_REG : LIM_TXT };
+  const s = statusOf(ci), T = s ? s.c.T : '', mun = locMun(ci, mi), reg = inRegional(mun);
+  if (reg) {
+    if (T === 'Com folga') return null;
+    return { mun, reg, txt: LIM_TXT_REG, why: T ? `o alimentador está com status “${T}”` : 'o alimentador não tem status na planilha' };
+  }
+  if (T !== 'Inversão de fluxo provável') return null;
+  return { mun, reg, txt: LIM_TXT, why: 'o alimentador está com inversão de fluxo provável' };
 }
 /* aba extra: só aparece quando o último local consultado fica fora da regional de Jaraguá do Sul */
 S.ctx = null;
@@ -1481,7 +1487,7 @@ function renderPointV2(q) {
         <p class="st-mean">O alimentador ${esc(feederLabel(top.c))} não está na planilha de inversão de fluxo. Pode ser de uma cooperativa ou ter sido criado depois da data-base.</p></section>`;
   const lim = limite75(top.c, mi);
   const sug = lim ? `<section class="sug" aria-label="Limite para a proposta"><div class="sug-h">${SUN_ICON}<span class="eyebrow">Limite para a proposta${lim.mun ? ` · ${esc(lim.mun)}` : ''}</span></div>
-      <p class="sug-t">${esc(lim.txt)}</p><p class="small muted" style="margin:0">Motivo: o alimentador está com inversão de fluxo provável.</p></section>` : '';
+      <p class="sug-t">${esc(lim.txt)}</p><p class="small muted" style="margin:0">Motivo: ${esc(lim.why)}.</p></section>` : '';
   const fora = mname && !inRegional(mname);
   const nxt = fora ? `<div class="nextstep"><p><b>Próximo passo:</b> confira se o sistema que você vai apresentar ao cliente pode ser ligado.</p><button class="btn sm" type="button" data-goto="sys">Verificar sistema</button></div>` : '';
   let warn = '';
