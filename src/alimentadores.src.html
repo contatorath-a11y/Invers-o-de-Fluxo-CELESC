@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-edition="{{EDITION}}">
+<html lang="pt-BR" data-edition="{{EDITION}}" data-build="{{BUILD}}" data-gkey="{{GKEY}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -414,12 +414,13 @@ for lyr in ["CTMT", "SUB"]:
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<!--BASEDATA--><script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
 <script>
 'use strict';
 const V2 = document.documentElement.dataset.edition === 'v2';
-const isAdmin = () => /(^|[#&?])admin\b/.test(location.hash + location.search);
+const V3 = document.documentElement.dataset.build === 'v3';   /* 3.0: arquivo único, só consulta, base embutida */
+const isAdmin = () => !V3 && /(^|[#&?])admin\b/.test(location.hash + location.search);
 document.documentElement.classList.toggle('admin', isAdmin());
 window.addEventListener('hashchange', () => { document.documentElement.classList.toggle('admin', isAdmin()); if (V2) try { updateStatus(); } catch (_) {} });
 const MES = { JAN: 1, FEB: 2, FEV: 2, MAR: 3, APR: 4, ABR: 4, MAY: 5, MAI: 5, JUN: 6, JUL: 7, AUG: 8, AGO: 8, SEP: 9, SET: 9, OCT: 10, OUT: 10, NOV: 11, DEC: 12, DEZ: 12 };
@@ -1251,9 +1252,8 @@ if (window.L) {
 
   /* Google Maps: a chave da Maps JavaScript API fica em verificador/config.json (restrita ao domínio do site) */
   async function useGoogleMap() {
-    if (location.protocol === 'file:') return false;
-    let key = '';
-    try { const r = await fetch('config.json', { cache: 'no-cache' }); if (r.ok) key = String((await r.json()).googleMapsKey || '').trim(); } catch (_) {}
+    let key = (document.documentElement.dataset.gkey || '').trim();
+    if (!key && location.protocol !== 'file:') try { const r = await fetch('config.json', { cache: 'no-cache' }); if (r.ok) key = String((await r.json()).googleMapsKey || '').trim(); } catch (_) {}
     if (!key) return false;
     let road = null, sat = null, ctl = null;
     const fallback = () => {
@@ -1854,7 +1854,18 @@ function applyPub({ meta, secs }) {
   const po = $('#pubOut'); po.hidden = false; po.className = 'note';
   po.textContent = `Base publicada no site, gerada em ${new Date(meta.gerado).toLocaleDateString('pt-BR')}${meta.dataBase ? ` (data-base ${fmtDB(meta.dataBase)})` : ''}${meta.fontes && meta.fontes.length ? ` a partir de ${meta.fontes.length} arquivo${meta.fontes.length > 1 ? 's' : ''}` : ''}. Para usar uma base própria, arraste os arquivos acima.`;
 }
+async function loadEmbeddedBase() {
+  const el = document.getElementById('baseData'); if (!el) return false;
+  const st = $('#statusTxt'); st.textContent = 'Abrindo a base da rede…';
+  try {
+    const buf = await (await fetch('data:application/octet-stream;base64,' + el.textContent.trim())).arrayBuffer();
+    el.textContent = '';
+    applyPub(unpackSections(await gunzipU8(new Uint8Array(buf))));
+    return true;
+  } catch (e) { st.textContent = 'Não foi possível abrir a base da rede deste arquivo.'; return false; }
+}
 async function loadPublishedBase() {
+  if (V3) return loadEmbeddedBase();
   if (location.protocol === 'file:') return false;
   let head; try { head = await fetch(PUB_FILE, { method: 'HEAD', cache: 'no-cache' }); } catch (_) { return false; }
   if (!head.ok) return false;

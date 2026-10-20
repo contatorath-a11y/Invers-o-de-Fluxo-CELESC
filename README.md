@@ -30,6 +30,14 @@ Edição para o time comercial da Solturi Energia Solar, publicada em `/verifica
 
 A chave fica visível no site, como em qualquer página com mapa do Google; a restrição por site impede o uso em outros endereços.
 
+## Versão 3.0 · arquivo único para consulta
+
+A mesma ferramenta da 2.0, num único arquivo HTML com a base embutida, para distribuir ao time por Drive, e-mail ou WhatsApp. Abre direto do computador, sem instalar nada, e serve só para consulta (não tem caixa de carregamento nem `#admin`). Precisa de internet para o mapa, a busca de endereços e o verificador. O arquivo gerado não vai para o GitHub.
+
+```bash
+python src/build.py v3 --base caminho/base-sc.bin.gz    # gera dist/verificador-3.0.html
+```
+
 ## Como publicar ou atualizar a base fixa
 
 1. Abra o site (ou `index.html` direto do disco) no Chrome ou no Edge.

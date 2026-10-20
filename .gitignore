@@ -8,3 +8,6 @@ __pycache__/
 UCBT_PJ*
 UCMT_PJ*
 UCAT_PJ*
+
+# edição 3.0 (arquivo único com a base) não vai para o GitHub
+dist/
